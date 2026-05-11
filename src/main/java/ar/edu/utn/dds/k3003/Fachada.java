@@ -10,6 +10,8 @@ import ar.edu.utn.dds.k3003.repositories.DonadoresYEntidadesDataMapper;
 import ar.edu.utn.dds.k3003.repositories.InMemoryDonadoresRepo;
 import java.util.List;
 import java.util.NoSuchElementException;
+
+import ar.edu.utn.dds.k3003.service.DonacionesService;
 import lombok.val;
 import org.springframework.stereotype.Service;
 
@@ -36,309 +38,410 @@ import java.util.NoSuchElementException;
 import lombok.val;
 
 @Service
-public class Fachada implements FachadaDonaciones {
+public class Fachada implements FachadaDonaciones{
 
-  private DonacionesRepository donacionesRepository;
-  private ProductoRepository productoRepository;
-  private CategoriaRepository categoriaRepository;
-  private DonacionesDataMapper donacionesDataMapper = new DonacionesDataMapper();
-  private FachadaDonadoresYEntidades fachadaDonadoresYEntidades;
-  private FachadaLogistica fachadaLogistica;
-
-  public Fachada() {
-    this.donacionesRepository = new InMemoryDonacionesRepo();
-    this.productoRepository = new InMemoryProductoRepo();
-    this.categoriaRepository = new InMemoryCategoriaRepo();
-
-    this.cargarEnCatalogo("producto1");
-  }
-
-  private void cargarEnCatalogo(String productoID) {
-    Categoria alimentos = new Categoria("Alimentos", "");
-    Subcategoria arroz = new Subcategoria("1","Arroz", "", alimentos);
+    private DonacionesService donacionesService;
+    private FachadaDonadoresYEntidades fachadaDonadoresYEntidades;
+    private FachadaLogistica fachadaLogistica;
+    private DonacionesDataMapper donacionesDataMapper = new DonacionesDataMapper();
 
 
-    Producto producto = new Producto(
-            productoID,
-            "",
-            "",
-            arroz
-    );
-    this.productoRepository.guardar(producto);
-  }
-
-  public ProductoDTO darAltaProducto(String productoID, String nombre, String descripcion,String categoriaID) {
-
-    this.validarID(productoID);
-    this.validarNombre(nombre);
-
-    Subcategoria subcategoria = this.categoriaRepository.buscarSubcategoriaPorId(categoriaID)
-            .orElseThrow(() -> new SubcategoriaInvalidaException("La subcategoría no existe."));
-
-    Producto nuevoProducto = new Producto(
-            productoID,
-            nombre,
-            descripcion,
-            subcategoria);
-
-    Producto guardado = this.productoRepository.guardar(nuevoProducto);
-
-    return new ProductoDTO(
-            guardado.getId(),
-            guardado.getNombre(),
-            guardado.getDescripcion(),
-            guardado.getSubcategoria().getId(),
-            null);
-  }
-
-  private void validarNombre(String nombre) {
-    if (nombre == null || nombre.trim().isEmpty()) {
-      throw new NombreInvalidoException("Nombre inválido");
-    }
-  }
-
-  private void validarID(String id) {
-    if (id == null || id.trim().isEmpty()) {
-      throw new IDInvalidoException("ID inválido.");
-    }
-  }
-
-  public CategoriaDTO darAltaCategoria(String nombre, String descripcion) {
-    this.validarNombre(nombre);
-
-    Categoria nuevaCategoria = new Categoria(
-            nombre,
-            descripcion);
-
-    Categoria guardada = this.categoriaRepository.guardar(nuevaCategoria);
-
-    return new CategoriaDTO(
-            guardada.getId(),
-            guardada.getNombre(),
-            guardada.getDescripcion(),
-            null);
-  }
-
-  public void asignarIdentificadorAProducto(String productoID, String codigo) {
-
-    this.validarID(productoID);
-    if (codigo == null || codigo.trim().isEmpty()) {
-      throw new IllegalArgumentException("código inválido");
+    public Fachada() {
+        donacionesService = new DonacionesService();
     }
 
-    Producto producto = this.buscarProductoPorID(productoID);
+    @Override
+    public DonacionDTO registrarDonacion(DonacionDTO donacionDTO) {
+        this.verificarDonador(donacionDTO.donadorID());
+        val donacion = this.donacionesDataMapper.toDonacion(donacionDTO);
+        val donacionRegistrada = donacionesService.gestionarDonacionRecibida(donacion, donacionDTO.productoID());
+        fachadaLogistica.gestionarDonacion(
+                donacionRegistrada.getDepositoID(),
+                donacionRegistrada.getId(),
+                donacionRegistrada.getProducto().getId(),
+                donacionRegistrada.getCantidad()
+        );
 
-    Identificador nuevoIdentificador = new Identificador(TipoIdentificadorEnum.CODIGODEBARRAS, codigo);
-
-    producto.setIdentificador(nuevoIdentificador);
-
-    this.productoRepository.actualizar(producto);
-  }
-
-//  public Producto buscarProductoPorID(String productoID) {
-//    return this.productoRepository.buscarPorId(productoID)
-//            .orElseThrow(() -> new ProductoNoEncontradoException(
-//                    "El producto con ID " + productoID + " no existe."));
-//  }
-
-  @Override
-  public IdentificadorDTO agregarIdentificador(IdentificadorDTO identificadorDTO) {
-    return null;
-  }
-
-  @Override
-  public IdentificadorDTO buscarIdentificadorPorID(String identificadorID) throws NoSuchElementException {
-    return null;
-  }
-
-  public String darAltaSubcategoria(String categoriaID, String nombre, String descripcion) {
-
-    this.validarID(categoriaID);
-    this.validarNombre(nombre);
-
-    Categoria categoria = this.categoriaRepository.buscarCategoriaPorId(categoriaID)
-            .orElseThrow(() -> new CategoriaNoEncontradaException(
-                    "La categoría con ID " + categoriaID + " no existe."));
-
-    String id = this.categoriaRepository.generarIdSubcategoria();
-    Subcategoria nuevaSubcategoria = new Subcategoria(
-            id,
-            nombre,
-            descripcion,
-            categoria);
-
-    categoria.agregarSubcategoria(nuevaSubcategoria);
-    this.categoriaRepository.actualizar(categoria);
-
-
-    return nuevaSubcategoria.getId();
-  }
-
-  public void darDeBajaProducto(String productoID) {
-    Producto producto = this.buscarProductoPorID(productoID);
-    producto.darDeBaja();
-    this.productoRepository.actualizar(producto);
-  }
-
-  public void darDeBajaCategoria(String categoriaID) {
-
-    Categoria categoria = this.categoriaRepository.buscarCategoriaPorId(categoriaID)
-            .orElseThrow(() -> new CategoriaNoEncontradaException(
-                    "La categoría con ID " + categoriaID + " no existe."));
-
-    boolean tieneSubcategoriasActivas = categoria.getSubcategorias().stream()
-            .anyMatch(subcategoria -> subcategoria.isEstaDadoDeAlta());
-
-    if (tieneSubcategoriasActivas) {
-      throw new IllegalStateException(
-              "No se puede dar de baja: existen subcategorias activas vinculadas.");
+        return this.donacionesDataMapper.toDonacionDTO(donacionRegistrada);
     }
 
-    categoria.darDeBaja();
-
-    this.categoriaRepository.actualizar(categoria);
-  }
-
-  public void darDeBajaSubcategoria(String categoriaID, String subcategoriaID) {
-    Subcategoria subcategoria = this.categoriaRepository.buscarSubcategoriaPorId(subcategoriaID)
-            .orElseThrow(() -> new SubcategoriaInvalidaException
-                    ("La subcategoría con ID " + subcategoriaID + " no existe."));
-
-    boolean tieneProductosActivos = this.productoRepository.buscarPorSubcategoria(subcategoriaID)
-            .stream().anyMatch(producto -> producto.isEstaDadoDeAlta());
-
-    if (tieneProductosActivos) {
-      throw new ProductosActivosVinculadosException
-              ("No se puede dar de baja: existen productos activos vinculados.");
+    private void verificarDonador(String donadorID) {
+        if (!fachadaDonadoresYEntidades.puedeDonar(donadorID)) {
+            throw new DonadorNoAptoException("El donador no se encuentra apto para donar");
+        }
     }
 
-    subcategoria.darDeBaja();
-  }
-
-  public void quitarIdentificadorAProducto(String productoID) {
-    Producto producto = this.buscarProductoPorID(productoID);
-    producto.setIdentificador(null);
-    this.productoRepository.actualizar(producto);
-  }
-
-  public List<String> verHistorialEstadosDonacion(String donacionID) {
-    val donacion = this.buscarDonacionPorIDEnRepo(donacionID);
-    List<HistorialEstado> historial = donacion.getHistorialEstados();
-
-    return this.historialEstadosDonacion(historial);
-  }
-
-  private List<String> historialEstadosDonacion(List<HistorialEstado> historial) {
-    return historial.stream()
-            .map(estado -> estado.mostrarEstado()).toList();
-  }
-
-  @Override
-  public DonacionDTO registrarDonacion(DonacionDTO donacionDTO) {
-
-    this.verificarDonacionIngresada(donacionDTO);
-
-    this.verificarDonador(donacionDTO.donadorID());
-    Producto producto = this.buscarProductoPorID(donacionDTO.productoID());
-//    Producto producto = this.buscarProductoPorId(donacionDTO.productoID()).orElseGet(() -> this.darAltaProducto(donacionDTO.productoID()));
-
-    val donacion = donacionesDataMapper.toDonacion(donacionDTO, producto);
-    val donacionRegistrada = this.donacionesRepository.guardar(donacion);
-
-    this.enviarPaqueteALogistica(donacionRegistrada);
-
-    return donacionesDataMapper.toDonacionDTO(donacionRegistrada);
-  }
-
-  private void verificarDonacionIngresada(DonacionDTO donacionDTO) {
-    if (donacionDTO == null || donacionDTO.id() != null) {
-      throw new DonacionInvalidaException("Donación inválida");
-    }
-  }
-
-  private void enviarPaqueteALogistica(Donacion donacion) {
-    fachadaLogistica.gestionarDonacion(donacion.getDepositoID(), donacion.getId(), donacion.getProducto().getId(), donacion.getCantidad());
-  }
-
-  private void verificarDonador(String donadorID) {
-    val donadorDTO = fachadaDonadoresYEntidades.buscarDonadorPorID(donadorID);
-
-    if (donadorDTO == null) {
-      throw new DonadorNoEncontradoException("No se encontró al donador");
-    }
-    if (!fachadaDonadoresYEntidades.puedeDonar(donadorID)) {
-      throw new DonadorNoAptoException("El donador no se encuentra apto para donar");
-    }
-  }
-
-  @Override
-  public DonacionDTO buscarDonacionPorID(String donacionID) throws NoSuchElementException {
-    val donacion = this.buscarDonacionPorIDEnRepo(donacionID);
-
-    return this.donacionesDataMapper.toDonacionDTO(donacion);
-  }
-
-  @Override
-  public DonacionDTO cambiarEstadoDeDonacion(String donacionID, EstadoDonacionEnum estado) throws NoSuchElementException {
-    val donacion = this.buscarDonacionPorIDEnRepo(donacionID);
-
-    donacion.cambiarEstado(estado);
-    this.donacionesRepository.actualizar(donacion);
-
-    return this.donacionesDataMapper.toDonacionDTO(donacion);
-  }
-
-  private Donacion buscarDonacionPorIDEnRepo(String donacionID) throws NoSuchElementException {
-    return this.donacionesRepository.buscarPorId(donacionID)
-            .orElseThrow(() -> new DonacionNoEncontradaException("No se encontró donación con ID: " + donacionID));
-  }
-
-  @Override
-  public List<DonacionDTO> buscarPorDonadorYFechaInicio(String donadorID, LocalDate fecha) throws NoSuchElementException {
-    val donaciones = this.donacionesRepository.buscarPorIDyFecha(donadorID, fecha);
-
-    if (donaciones.isEmpty()) {
-      throw new DonacionNoEncontradaException
-              ("No se encontraron donaciones para el donador con ID " + donadorID + "A partir de la fecha " + fecha);
+    @Override
+    public DonacionDTO buscarDonacionPorID(String donacionID) throws NoSuchElementException {
+        val donacion = this.donacionesService.buscarDonacionPorId(donacionID);
+        return this.donacionesDataMapper.toDonacionDTO(donacion);
     }
 
-    return donaciones.stream().map(donacion -> this.donacionesDataMapper.toDonacionDTO(donacion)).toList();
-  }
+    @Override
+    public DonacionDTO cambiarEstadoDeDonacion(String donacionID, EstadoDonacionEnum estado) throws NoSuchElementException {
+        val donacion = this.donacionesService.cambiarEstadoDonacion(donacionID, estado);
+        return this.donacionesDataMapper.toDonacionDTO(donacion);
+    }
 
-  @Override
-  public DonacionDTO registrarQuejaEnDonacion(String donacionID, String descripcion) {
-    val donacion = this.buscarDonacionPorIDEnRepo(donacionID);
-    QuejaDTO quejaDTO = new QuejaDTO(null, donacionID, donacion.getDonadorID(), LocalDate.now(), descripcion);
+    @Override
+    public List<DonacionDTO> buscarPorDonadorYFechaInicio(String donadorID, LocalDate fecha) throws NoSuchElementException {
+        val donaciones = this.donacionesService.buscarDonacionPorDonadorYFechaInicio(donadorID, fecha);
+        return donaciones.stream().map(donacion -> this.donacionesDataMapper.toDonacionDTO(donacion)).toList();
+    }
 
-    this.fachadaDonadoresYEntidades.agregarQueja(quejaDTO);
-    donacion.agregarQueja(descripcion);
-    this.donacionesRepository.actualizar(donacion);
+    @Override
+    public DonacionDTO registrarQuejaEnDonacion(String donacionID, String descripcion) {
+        // TODO
+        val donacion = this.donacionesService.buscarDonacionPorId(donacionID);
+        QuejaDTO quejaDTO = new QuejaDTO(null, donacionID, donacion.getDonadorID(), LocalDate.now(), descripcion);
+        this.fachadaDonadoresYEntidades.agregarQueja(quejaDTO);
+        val donacionActualizada = this.donacionesService.registrarQueja(donacion, descripcion);
 
-    return this.donacionesDataMapper.toDonacionDTO(donacion);
-  }
+        return this.donacionesDataMapper.toDonacionDTO(donacionActualizada);
+    }
 
-  @Override
-  public ProductoDTO agregarProducto(ProductoDTO productoDTO) {
-    // TODO
-    return null;
-  }
+    @Override
+    public ProductoDTO agregarProducto(ProductoDTO productoDTO) {
+        // TODO
+        return null;
+    }
 
-  @Override
-  public ProductoDTO buscarProductoPorID(String productoID) throws NoSuchElementException {
-    // TODO
-    return null;
-  }
+    @Override
+    public ProductoDTO buscarProductoPorID(String productoID) throws NoSuchElementException {
+       // TODO
+    }
 
-  @Override
-  public void setFachadaDonadoresYEntidades(FachadaDonadoresYEntidades fachadaDonadoresYEntidades) {
-    this.fachadaDonadoresYEntidades = fachadaDonadoresYEntidades;
-  }
+    @Override
+    public IdentificadorDTO agregarIdentificador(IdentificadorDTO identificadorDTO) {
+        // TODO
+        return null;
+    }
 
-  @Override
-  public void setFachadaLogistica(FachadaLogistica fachadaLogistica) {
-    this.fachadaLogistica = fachadaLogistica;
-  }
+    @Override
+    public IdentificadorDTO buscarIdentificadorPorID(String identificadorID) throws NoSuchElementException {
+        // TODO
+        return null;
+    }
+
+    @Override
+    public void setFachadaDonadoresYEntidades(FachadaDonadoresYEntidades fachadaDonadoresYEntidades) {
+        this.fachadaDonadoresYEntidades = fachadaDonadoresYEntidades;
+    }
+
+    @Override
+    public void setFachadaLogistica(FachadaLogistica fachadaLogistica) {
+        this.fachadaLogistica = fachadaLogistica;
+    }
 }
+
+//@Service
+//public class Fachada implements FachadaDonaciones {
+//
+//  private DonacionesRepository donacionesRepository;
+//  private ProductoRepository productoRepository;
+//  private CategoriaRepository categoriaRepository;
+//  private DonacionesDataMapper donacionesDataMapper = new DonacionesDataMapper();
+//  private FachadaDonadoresYEntidades fachadaDonadoresYEntidades;
+//  private FachadaLogistica fachadaLogistica;
+//
+//  private DonacionesService donacionesService;
+//
+//  public Fachada() {
+//    this.donacionesRepository = new InMemoryDonacionesRepo();
+//    this.productoRepository = new InMemoryProductoRepo();
+//    this.categoriaRepository = new InMemoryCategoriaRepo();
+//
+//    this.cargarEnCatalogo("producto1");
+//  }
+//
+//  private void cargarEnCatalogo(String productoID) {
+//    Categoria alimentos = new Categoria("Alimentos", "");
+//    Subcategoria arroz = new Subcategoria("1","Arroz", "", alimentos);
+//
+//
+//    Producto producto = new Producto(
+//            productoID,
+//            "",
+//            "",
+//            arroz
+//    );
+//    this.productoRepository.guardar(producto);
+//  }
+//
+//  public ProductoDTO darAltaProducto(String productoID, String nombre, String descripcion,String categoriaID) {
+//
+//    this.validarID(productoID);
+//    this.validarNombre(nombre);
+//
+//    Subcategoria subcategoria = this.categoriaRepository.buscarSubcategoriaPorId(categoriaID)
+//            .orElseThrow(() -> new SubcategoriaInvalidaException("La subcategoría no existe."));
+//
+//    Producto nuevoProducto = new Producto(
+//            productoID,
+//            nombre,
+//            descripcion,
+//            subcategoria);
+//
+//    Producto guardado = this.productoRepository.guardar(nuevoProducto);
+//
+//    return new ProductoDTO(
+//            guardado.getId(),
+//            guardado.getNombre(),
+//            guardado.getDescripcion(),
+//            guardado.getSubcategoria().getId(),
+//            null);
+//  }
+//
+//  private void validarNombre(String nombre) {
+//    if (nombre == null || nombre.trim().isEmpty()) {
+//      throw new NombreInvalidoException("Nombre inválido");
+//    }
+//  }
+//
+//  private void validarID(String id) {
+//    if (id == null || id.trim().isEmpty()) {
+//      throw new IDInvalidoException("ID inválido.");
+//    }
+//  }
+//
+//  public CategoriaDTO darAltaCategoria(String nombre, String descripcion) {
+//    this.validarNombre(nombre);
+//
+//    Categoria nuevaCategoria = new Categoria(
+//            nombre,
+//            descripcion);
+//
+//    Categoria guardada = this.categoriaRepository.guardar(nuevaCategoria);
+//
+//    return new CategoriaDTO(
+//            guardada.getId(),
+//            guardada.getNombre(),
+//            guardada.getDescripcion(),
+//            null);
+//  }
+//
+//  public void asignarIdentificadorAProducto(String productoID, String codigo) {
+//
+//    this.validarID(productoID);
+//    if (codigo == null || codigo.trim().isEmpty()) {
+//      throw new IllegalArgumentException("código inválido");
+//    }
+//
+//    Producto producto = this.buscarProductoPorID(productoID);
+//
+//    Identificador nuevoIdentificador = new Identificador(TipoIdentificadorEnum.CODIGODEBARRAS, codigo);
+//
+//    producto.setIdentificador(nuevoIdentificador);
+//
+//    this.productoRepository.actualizar(producto);
+//  }
+//
+////  public Producto buscarProductoPorID(String productoID) {
+////    return this.productoRepository.buscarPorId(productoID)
+////            .orElseThrow(() -> new ProductoNoEncontradoException(
+////                    "El producto con ID " + productoID + " no existe."));
+////  }
+//
+//  @Override
+//  public IdentificadorDTO agregarIdentificador(IdentificadorDTO identificadorDTO) {
+//      // TODO
+//      return null;
+//  }
+//
+//  @Override
+//  public IdentificadorDTO buscarIdentificadorPorID(String identificadorID) throws NoSuchElementException {
+//      // TODO
+//    return null;
+//  }
+//
+//  public String darAltaSubcategoria(String categoriaID, String nombre, String descripcion) {
+//
+//    this.validarID(categoriaID);
+//    this.validarNombre(nombre);
+//
+//    Categoria categoria = this.categoriaRepository.buscarCategoriaPorId(categoriaID)
+//            .orElseThrow(() -> new CategoriaNoEncontradaException(
+//                    "La categoría con ID " + categoriaID + " no existe."));
+//
+//    String id = this.categoriaRepository.generarIdSubcategoria();
+//    Subcategoria nuevaSubcategoria = new Subcategoria(
+//            id,
+//            nombre,
+//            descripcion,
+//            categoria);
+//
+//    categoria.agregarSubcategoria(nuevaSubcategoria);
+//    this.categoriaRepository.actualizar(categoria);
+//
+//
+//    return nuevaSubcategoria.getId();
+//  }
+//
+//  public void darDeBajaProducto(String productoID) {
+//    Producto producto = this.buscarProductoPorID(productoID);
+//    producto.darDeBaja();
+//    this.productoRepository.actualizar(producto);
+//  }
+//
+//  public void darDeBajaCategoria(String categoriaID) {
+//
+//    Categoria categoria = this.categoriaRepository.buscarCategoriaPorId(categoriaID)
+//            .orElseThrow(() -> new CategoriaNoEncontradaException(
+//                    "La categoría con ID " + categoriaID + " no existe."));
+//
+//    boolean tieneSubcategoriasActivas = categoria.getSubcategorias().stream()
+//            .anyMatch(subcategoria -> subcategoria.isEstaDadoDeAlta());
+//
+//    if (tieneSubcategoriasActivas) {
+//      throw new IllegalStateException(
+//              "No se puede dar de baja: existen subcategorias activas vinculadas.");
+//    }
+//
+//    categoria.darDeBaja();
+//
+//    this.categoriaRepository.actualizar(categoria);
+//  }
+//
+//  public void darDeBajaSubcategoria(String categoriaID, String subcategoriaID) {
+//    Subcategoria subcategoria = this.categoriaRepository.buscarSubcategoriaPorId(subcategoriaID)
+//            .orElseThrow(() -> new SubcategoriaInvalidaException
+//                    ("La subcategoría con ID " + subcategoriaID + " no existe."));
+//
+//    boolean tieneProductosActivos = this.productoRepository.buscarPorSubcategoria(subcategoriaID)
+//            .stream().anyMatch(producto -> producto.isEstaDadoDeAlta());
+//
+//    if (tieneProductosActivos) {
+//      throw new ProductosActivosVinculadosException
+//              ("No se puede dar de baja: existen productos activos vinculados.");
+//    }
+//
+//    subcategoria.darDeBaja();
+//  }
+//
+//  public void quitarIdentificadorAProducto(String productoID) {
+//    Producto producto = this.buscarProductoPorID(productoID);
+//    producto.setIdentificador(null);
+//    this.productoRepository.actualizar(producto);
+//  }
+//
+//  public List<String> verHistorialEstadosDonacion(String donacionID) {
+//    val donacion = this.buscarDonacionPorIDEnRepo(donacionID);
+//    List<HistorialEstado> historial = donacion.getHistorialEstados();
+//
+//    return this.historialEstadosDonacion(historial);
+//  }
+//
+//  private List<String> historialEstadosDonacion(List<HistorialEstado> historial) {
+//    return historial.stream()
+//            .map(estado -> estado.mostrarEstado()).toList();
+//  }
+//
+//  @Override
+//  public DonacionDTO registrarDonacion(DonacionDTO donacionDTO) {
+//
+//    this.verificarDonacionIngresada(donacionDTO);
+//
+//    this.verificarDonador(donacionDTO.donadorID());
+//    Producto producto = this.buscarProductoPorID(donacionDTO.productoID());
+////    Producto producto = this.buscarProductoPorId(donacionDTO.productoID()).orElseGet(() -> this.darAltaProducto(donacionDTO.productoID()));
+//
+//    val donacion = donacionesDataMapper.toDonacion(donacionDTO, producto);
+//    val donacionRegistrada = this.donacionesRepository.guardar(donacion);
+//
+//    this.enviarPaqueteALogistica(donacionRegistrada);
+//
+//    return donacionesDataMapper.toDonacionDTO(donacionRegistrada);
+//  }
+//
+//  private void verificarDonacionIngresada(DonacionDTO donacionDTO) {
+//    if (donacionDTO == null || donacionDTO.id() != null) {
+//      throw new DonacionInvalidaException("Donación inválida");
+//    }
+//  }
+//
+//  private void enviarPaqueteALogistica(Donacion donacion) {
+//    fachadaLogistica.gestionarDonacion(donacion.getDepositoID(), donacion.getId(), donacion.getProducto().getId(), donacion.getCantidad());
+//  }
+//
+//  private void verificarDonador(String donadorID) {
+//    val donadorDTO = fachadaDonadoresYEntidades.buscarDonadorPorID(donadorID);
+//
+//    if (donadorDTO == null) {
+//      throw new DonadorNoEncontradoException("No se encontró al donador");
+//    }
+//    if (!fachadaDonadoresYEntidades.puedeDonar(donadorID)) {
+//      throw new DonadorNoAptoException("El donador no se encuentra apto para donar");
+//    }
+//  }
+//
+//  @Override
+//  public DonacionDTO buscarDonacionPorID(String donacionID) throws NoSuchElementException {
+//    val donacion = this.buscarDonacionPorIDEnRepo(donacionID);
+//
+//    return this.donacionesDataMapper.toDonacionDTO(donacion);
+//  }
+//
+//  @Override
+//  public DonacionDTO cambiarEstadoDeDonacion(String donacionID, EstadoDonacionEnum estado) throws NoSuchElementException {
+//    val donacion = this.buscarDonacionPorIDEnRepo(donacionID);
+//
+//    donacion.cambiarEstado(estado);
+//    this.donacionesRepository.actualizar(donacion);
+//
+//    return this.donacionesDataMapper.toDonacionDTO(donacion);
+//  }
+//
+//  private Donacion buscarDonacionPorIDEnRepo(String donacionID) throws NoSuchElementException {
+//    return this.donacionesRepository.buscarPorId(donacionID)
+//            .orElseThrow(() -> new DonacionNoEncontradaException("No se encontró donación con ID: " + donacionID));
+//  }
+//
+//  @Override
+//  public List<DonacionDTO> buscarPorDonadorYFechaInicio(String donadorID, LocalDate fecha) throws NoSuchElementException {
+//    val donaciones = this.donacionesRepository.buscarPorIDyFecha(donadorID, fecha);
+//
+//    if (donaciones.isEmpty()) {
+//      throw new DonacionNoEncontradaException
+//              ("No se encontraron donaciones para el donador con ID " + donadorID + "A partir de la fecha " + fecha);
+//    }
+//
+//    return donaciones.stream().map(donacion -> this.donacionesDataMapper.toDonacionDTO(donacion)).toList();
+//  }
+//
+//  @Override
+//  public DonacionDTO registrarQuejaEnDonacion(String donacionID, String descripcion) {
+//    val donacion = this.buscarDonacionPorIDEnRepo(donacionID);
+//    QuejaDTO quejaDTO = new QuejaDTO(null, donacionID, donacion.getDonadorID(), LocalDate.now(), descripcion);
+//
+//    this.fachadaDonadoresYEntidades.agregarQueja(quejaDTO);
+//    donacion.agregarQueja(descripcion);
+//    this.donacionesRepository.actualizar(donacion);
+//
+//    return this.donacionesDataMapper.toDonacionDTO(donacion);
+//  }
+//
+//  @Override
+//  public ProductoDTO agregarProducto(ProductoDTO productoDTO) {
+//    // TODO
+//    return null;
+//  }
+//
+//  @Override
+//  public ProductoDTO buscarProductoPorID(String productoID) throws NoSuchElementException {
+//    // TODO
+//    return null;
+//  }
+//
+//  @Override
+//  public void setFachadaDonadoresYEntidades(FachadaDonadoresYEntidades fachadaDonadoresYEntidades) {
+//    this.fachadaDonadoresYEntidades = fachadaDonadoresYEntidades;
+//  }
+//
+//  @Override
+//  public void setFachadaLogistica(FachadaLogistica fachadaLogistica) {
+//    this.fachadaLogistica = fachadaLogistica;
+//  }
+//}
 
 
 

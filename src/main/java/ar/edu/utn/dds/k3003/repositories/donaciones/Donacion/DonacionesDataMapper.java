@@ -5,13 +5,13 @@ import ar.edu.utn.dds.k3003.model.donaciones.Donacion;
 import ar.edu.utn.dds.k3003.model.donaciones.Producto;
 
 public class DonacionesDataMapper {
-    public Donacion toDonacion(DonacionDTO donacionDTO, Producto producto){
+    public Donacion toDonacion(DonacionDTO donacionDTO) {
         return new Donacion(
                 donacionDTO.donadorID(),
                 donacionDTO.depositoID(),
                 donacionDTO.descripcion(),
-                producto,
-                donacionDTO.cantidad());
+                donacionDTO.cantidad()
+        );
     }
 
     public DonacionDTO toDonacionDTO(Donacion donacion){
@@ -22,6 +22,7 @@ public class DonacionesDataMapper {
                 donacion.getDescripcion(),
                 donacion.getProducto().getId(),
                 donacion.getCantidad(),
-                donacion.getEstado());
+                donacion.getEstado()
+        );
     }
 }

@@ -23,6 +23,7 @@ public class Donacion {
     private String descripcion;
     @Getter
     private EstadoDonacionEnum estado;
+    @Setter
     @Getter
     private Producto producto;
     @Getter
@@ -31,10 +32,10 @@ public class Donacion {
     @Getter
     private List<HistorialEstado> historialEstados;
 
-    public Donacion(String donadorID, String depositoID, String descripcion, Producto producto, Integer cantidad) {
+    public Donacion(String donadorID, String depositoID, String descripcion, Integer cantidad) {
         this.donadorID = donadorID;
+        this.depositoID = depositoID;
         this.descripcion = descripcion;
-        this.producto = producto;
         this.cantidad = cantidad;
         this.estado = EstadoDonacionEnum.INGRESADA;
         this.fecha = LocalDate.now();
