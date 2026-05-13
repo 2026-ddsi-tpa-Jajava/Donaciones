@@ -10,18 +10,9 @@ public class Subcategoria {
     private String nombre;
     private String descripcion;
     private Categoria categoria;
-    @Setter
-    @Getter
-    private boolean estaDadoDeAlta = true;
-
     public Subcategoria(String id, String nombre, String descripcion, Categoria categoria) {
         this.nombre = nombre;
         this.descripcion = descripcion;
         this.categoria = categoria;
-    }
-
-    public void darDeBaja()
-    {
-        this.setEstaDadoDeAlta(false);
     }
 }

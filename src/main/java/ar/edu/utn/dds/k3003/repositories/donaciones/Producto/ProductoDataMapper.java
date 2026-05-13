@@ -5,12 +5,19 @@ import ar.edu.utn.dds.k3003.model.donaciones.Producto;
 
 public class ProductoDataMapper {
     public Producto toProducto(ProductoDTO productoDTO) {
-        // TODO
-        return null;
+        return new Producto(
+                productoDTO.nombre(),
+                productoDTO.descripcion()
+        );
     }
 
     public ProductoDTO toProductoDTO(Producto producto) {
-        // TODO
-        return null;
+        return new ProductoDTO(
+                producto.getId(),
+                producto.getNombre(),
+                producto.getDescripcion(),
+                producto.getSubcategoria().getId(),
+                producto.getIdentificador().getId()
+        );
     }
 }

@@ -14,28 +14,16 @@ public class Producto {
     private String nombre;
     @Getter
     private String descripcion;
-    @Getter
-    private Subcategoria subcategoria;
-    @Getter
-    private Optional<Identificador> identificador;
     @Setter
     @Getter
-    private boolean estaDadoDeAlta = true;
+    private Subcategoria subcategoria;
+    @Setter
+    @Getter
+    private Identificador identificador;
 
-    public Producto(String id, String nombre, String descripcion, Subcategoria subcategoria) {
-        this.id = id;
+    public Producto(String nombre, String descripcion) {
         this.nombre = nombre;
         this.descripcion = descripcion;
-        this.subcategoria = subcategoria;
-        this.identificador = Optional.empty();
-    }
-
-    public Producto(String id, String nombre, String descripcion, Subcategoria subcategoria, Identificador identificador) {
-        this.id = id;
-        this.nombre = nombre;
-        this.descripcion = descripcion;
-        this.subcategoria = subcategoria;
-        this.identificador = Optional.ofNullable(identificador);
     }
 
     public boolean tieneID(String id) {
@@ -43,16 +31,7 @@ public class Producto {
 
     }
 
-    public void setIdentificador(Identificador identificador) {
-        this.identificador = Optional.ofNullable(identificador);
-    }
-
-    public void darDeBaja()
-    {
-        this.setEstaDadoDeAlta(false);
-    }
-
     public boolean tieneSubcategoria(String subcategoriaID) {
-        return this.subcategoria.getId().equals(id);
+        return this.subcategoria.getId().equals(subcategoriaID);
     }
 }

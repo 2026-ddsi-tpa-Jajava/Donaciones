@@ -2,15 +2,11 @@ package ar.edu.utn.dds.k3003;
 
 import ar.edu.utn.dds.k3003.catedra.dtos.donadoresYEntidades.*;
 import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaDonadoresYEntidades;
-import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaIncentivos;
-import ar.edu.utn.dds.k3003.exceptions.DonadorNoEncontradoException;
-import ar.edu.utn.dds.k3003.exceptions.DonadorYaExistenteException;
-import ar.edu.utn.dds.k3003.repositories.DonadoresRepository;
-import ar.edu.utn.dds.k3003.repositories.DonadoresYEntidadesDataMapper;
-import ar.edu.utn.dds.k3003.repositories.InMemoryDonadoresRepo;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import ar.edu.utn.dds.k3003.repositories.donaciones.Producto.ProductoDataMapper;
+import ar.edu.utn.dds.k3003.repositories.donaciones.identificador.IdentificadoresDataMapper;
 import ar.edu.utn.dds.k3003.service.DonacionesService;
 import lombok.val;
 import org.springframework.stereotype.Service;
@@ -18,24 +14,12 @@ import org.springframework.stereotype.Service;
 import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.*;
 import ar.edu.utn.dds.k3003.catedra.dtos.donadoresYEntidades.QuejaDTO;
 import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaDonaciones;
-import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaDonadoresYEntidades;
 import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaLogistica;
 import ar.edu.utn.dds.k3003.exceptions.donaciones.*;
-import ar.edu.utn.dds.k3003.exceptions.DonadorNoEncontradoException;
 import ar.edu.utn.dds.k3003.model.donaciones.*;
-import ar.edu.utn.dds.k3003.repositories.donaciones.Categoria.CategoriaRepository;
-import ar.edu.utn.dds.k3003.repositories.donaciones.Categoria.InMemoryCategoriaRepo;
 import ar.edu.utn.dds.k3003.repositories.donaciones.Donacion.DonacionesDataMapper;
-import ar.edu.utn.dds.k3003.repositories.donaciones.Donacion.DonacionesRepository;
-import ar.edu.utn.dds.k3003.repositories.donaciones.Donacion.InMemoryDonacionesRepo;
-import ar.edu.utn.dds.k3003.repositories.donaciones.Producto.InMemoryProductoRepo;
-import ar.edu.utn.dds.k3003.repositories.donaciones.Producto.ProductoRepository;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.NoSuchElementException;
-
-import lombok.val;
 
 @Service
 public class Fachada implements FachadaDonaciones{
@@ -44,6 +28,8 @@ public class Fachada implements FachadaDonaciones{
     private FachadaDonadoresYEntidades fachadaDonadoresYEntidades;
     private FachadaLogistica fachadaLogistica;
     private DonacionesDataMapper donacionesDataMapper = new DonacionesDataMapper();
+    private ProductoDataMapper productoDataMapper = new ProductoDataMapper();
+    private IdentificadoresDataMapper identificadoresDataMapper = new IdentificadoresDataMapper();
 
 
     public Fachada() {
@@ -52,6 +38,8 @@ public class Fachada implements FachadaDonaciones{
 
     @Override
     public DonacionDTO registrarDonacion(DonacionDTO donacionDTO) {
+        this.verificarDonacionIngresada(donacionDTO);
+
         this.verificarDonador(donacionDTO.donadorID());
         val donacion = this.donacionesDataMapper.toDonacion(donacionDTO);
         val donacionRegistrada = donacionesService.gestionarDonacionRecibida(donacion, donacionDTO.productoID());
@@ -64,6 +52,12 @@ public class Fachada implements FachadaDonaciones{
 
         return this.donacionesDataMapper.toDonacionDTO(donacionRegistrada);
     }
+
+    private void verificarDonacionIngresada(DonacionDTO donacionDTO) {
+        if (donacionDTO == null || donacionDTO.id() != null) {
+          throw new DonacionInvalidaException("Donación inválida");
+        }
+      }
 
     private void verificarDonador(String donadorID) {
         if (!fachadaDonadoresYEntidades.puedeDonar(donadorID)) {
@@ -91,7 +85,6 @@ public class Fachada implements FachadaDonaciones{
 
     @Override
     public DonacionDTO registrarQuejaEnDonacion(String donacionID, String descripcion) {
-        // TODO
         val donacion = this.donacionesService.buscarDonacionPorId(donacionID);
         QuejaDTO quejaDTO = new QuejaDTO(null, donacionID, donacion.getDonadorID(), LocalDate.now(), descripcion);
         this.fachadaDonadoresYEntidades.agregarQueja(quejaDTO);
@@ -102,19 +95,40 @@ public class Fachada implements FachadaDonaciones{
 
     @Override
     public ProductoDTO agregarProducto(ProductoDTO productoDTO) {
-        // TODO
-        return null;
+        this.verificarProductoIngresado(productoDTO);
+
+        val producto = this.productoDataMapper.toProducto(productoDTO);
+        val productoRegistrado = this.donacionesService.darAltaProducto(producto, productoDTO.categoriaID(), productoDTO.identificadorID());
+
+        return this.productoDataMapper.toProductoDTO(productoRegistrado);
+    }
+
+    private void verificarProductoIngresado(ProductoDTO productoDTO) {
+        if (productoDTO == null || productoDTO.id() != null) {
+            throw new DonacionInvalidaException("Producto inválido");
+        }
     }
 
     @Override
     public ProductoDTO buscarProductoPorID(String productoID) throws NoSuchElementException {
-       // TODO
+        val producto = this.donacionesService.buscarProducto(productoID);
+        return this.productoDataMapper.toProductoDTO(producto);
     }
 
     @Override
     public IdentificadorDTO agregarIdentificador(IdentificadorDTO identificadorDTO) {
         // TODO
-        return null;
+        this.verificarIdentificadorIngresado(identificadorDTO);
+        val identificador = this.identificadoresDataMapper.toIdentificador(identificadorDTO);
+        val identificadorRegistrado = this.donacionesService.darAltaIdentificador(identificador);
+
+        return this.identificadoresDataMapper.toIdentificadorDTO(identificadorRegistrado);
+    }
+
+    private void verificarIdentificadorIngresado(IdentificadorDTO identificadorDTO) {
+        if (identificadorDTO == null || identificadorDTO.id() != null) {
+            throw new DonacionInvalidaException("Identificador inválido");
+        }
     }
 
     @Override

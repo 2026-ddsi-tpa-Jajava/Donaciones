@@ -1,21 +1,20 @@
 package ar.edu.utn.dds.k3003.service;
 
-import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.DonacionDTO;
 import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.EstadoDonacionEnum;
-import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.ProductoDTO;
-import ar.edu.utn.dds.k3003.exceptions.donaciones.DonacionNoEncontradaException;
-import ar.edu.utn.dds.k3003.exceptions.donaciones.ProductoNoEncontradoException;
-import ar.edu.utn.dds.k3003.model.donaciones.Categoria;
+import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.TipoIdentificadorEnum;
+import ar.edu.utn.dds.k3003.exceptions.donaciones.*;
 import ar.edu.utn.dds.k3003.model.donaciones.Donacion;
+import ar.edu.utn.dds.k3003.model.donaciones.Identificador;
 import ar.edu.utn.dds.k3003.model.donaciones.Producto;
 import ar.edu.utn.dds.k3003.model.donaciones.Subcategoria;
 import ar.edu.utn.dds.k3003.repositories.donaciones.Categoria.CategoriaRepository;
 import ar.edu.utn.dds.k3003.repositories.donaciones.Categoria.InMemoryCategoriaRepo;
-import ar.edu.utn.dds.k3003.repositories.donaciones.Donacion.DonacionesDataMapper;
 import ar.edu.utn.dds.k3003.repositories.donaciones.Donacion.DonacionesRepository;
 import ar.edu.utn.dds.k3003.repositories.donaciones.Donacion.InMemoryDonacionesRepo;
 import ar.edu.utn.dds.k3003.repositories.donaciones.Producto.InMemoryProductoRepo;
 import ar.edu.utn.dds.k3003.repositories.donaciones.Producto.ProductoRepository;
+import ar.edu.utn.dds.k3003.repositories.donaciones.identificador.IdentificadoresRepository;
+import ar.edu.utn.dds.k3003.repositories.donaciones.identificador.InMemoryIdentificadoresRepo;
 import lombok.val;
 
 import java.time.LocalDate;
@@ -26,29 +25,15 @@ public class DonacionesService {
     private DonacionesRepository donacionesRepository;
     private ProductoRepository productoRepository;
     private CategoriaRepository categoriaRepository;
+    private IdentificadoresRepository identificadoresRepository;
 
 
     public DonacionesService() {
         this.donacionesRepository = new InMemoryDonacionesRepo();
         this.productoRepository = new InMemoryProductoRepo();
         this.categoriaRepository = new InMemoryCategoriaRepo();
-
-        this.cargarEnCatalogo("producto1");
+        this.identificadoresRepository = new InMemoryIdentificadoresRepo();
     }
-
-    private void cargarEnCatalogo(String productoID) {
-    Categoria alimentos = new Categoria("Alimentos", "");
-    Subcategoria arroz = new Subcategoria("1","Arroz", "", alimentos);
-
-
-    Producto producto = new Producto(
-            productoID,
-            "",
-            "",
-            arroz
-    );
-    this.productoRepository.guardar(producto);
-  }
 
     public Donacion gestionarDonacionRecibida(Donacion donacion, String productoID) {
         val producto = this.buscarProducto(productoID);
@@ -58,20 +43,11 @@ public class DonacionesService {
         return donacionRegistrada;
     }
 
-    public void realizarQueja() {
-        // TODO
-    }
+    public Donacion registrarQueja(Donacion donacion, String descripcion) {
+        donacion.agregarQueja(descripcion);
+        this.donacionesRepository.actualizar(donacion);
 
-    public void consultarDonacion() {
-        // TODO
-    }
-
-    public void consultaEstadoDonador() {
-        // TODO
-    }
-
-    public void incrementarStock() {
-        // TODO
+        return donacion;
     }
 
     public Producto buscarProducto(String productoID) {
@@ -116,10 +92,51 @@ public class DonacionesService {
         return donacion;
     }
 
-    public Donacion registrarQueja(Donacion donacion, String descripcion) {
-        donacion.agregarQueja(descripcion);
-        this.donacionesRepository.actualizar(donacion);
+    public Producto darAltaProducto(Producto producto, String categoriaID, String identificadorID) {
 
-        return donacion;
+        if (this.buscarProducto(producto.getId()) != null)
+        {
+            throw new ProductoYaRegistradoException("El producto con ID " + producto.getId() + " ya se encuentra registrado");
+        }
+
+        val identificador = this.buscarIdentificador(identificadorID);
+        val subcategoria = this.buscarSubcategoria(categoriaID);
+
+        identificador.validar(producto);
+        producto.setIdentificador(identificador);
+        producto.setSubcategoria(subcategoria);
+
+        return producto;
+    }
+
+    private Identificador buscarIdentificador(String identificadorID) {
+        val identificador = this.identificadoresRepository.buscarPorId(identificadorID);
+
+        if (identificador.isEmpty()) {
+            throw new IdentificadorNoEncontradoException("No se encontró identificador con ID " + identificadorID);
+        }
+
+        return identificador.get();
+    }
+
+    private Subcategoria buscarSubcategoria(String categoriaID) {
+        val subcategoria = this.categoriaRepository.buscarSubcategoriaPorId(categoriaID);
+
+        if (subcategoria.isEmpty()) {
+            throw new CategoriaNoEncontradaException("No se encontró subcategoria con ID " + categoriaID);
+        }
+
+        return subcategoria.get();
+    }
+
+    public Identificador darAltaIdentificador(Identificador identificador) {
+        if (this.buscarIdentificador(identificador.getId()) != null)
+        {
+            throw new RuntimeException("El identificador con ID " + identificador.getId() + " se encuentra registrado");
+        }
+
+        val identificadorGuardado = this.identificadoresRepository.guardar(identificador);
+
+        return identificadorGuardado;
     }
 }

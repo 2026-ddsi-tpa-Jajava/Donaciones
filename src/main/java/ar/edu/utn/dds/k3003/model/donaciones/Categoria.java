@@ -16,9 +16,6 @@ public class Categoria {
     private String descripcion;
     @Getter
     private List<Subcategoria> subcategorias;
-    @Setter
-    @Getter
-    private boolean estaDadoDeAlta = true;
 
     public Categoria(String nombre, String descripcion) {
         this.nombre = nombre;
@@ -28,14 +25,5 @@ public class Categoria {
 
     public void agregarSubcategoria(Subcategoria nuevaSubcategoria) {
         this.subcategorias.add(nuevaSubcategoria);
-    }
-
-    public boolean tieneID(String id) {
-        return this.getId().equals(id);
-    }
-
-    public void darDeBaja()
-    {
-        this.setEstaDadoDeAlta(false);
     }
 }
