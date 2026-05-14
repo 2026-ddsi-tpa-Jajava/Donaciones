@@ -117,7 +117,6 @@ public class Fachada implements FachadaDonaciones{
 
     @Override
     public IdentificadorDTO agregarIdentificador(IdentificadorDTO identificadorDTO) {
-        // TODO
         this.verificarIdentificadorIngresado(identificadorDTO);
         val identificador = this.identificadoresDataMapper.toIdentificador(identificadorDTO);
         val identificadorRegistrado = this.donacionesService.darAltaIdentificador(identificador);
@@ -133,8 +132,8 @@ public class Fachada implements FachadaDonaciones{
 
     @Override
     public IdentificadorDTO buscarIdentificadorPorID(String identificadorID) throws NoSuchElementException {
-        // TODO
-        return null;
+        val identificador = this.donacionesService.buscarIdentificador(identificadorID);
+        return this.identificadoresDataMapper.toIdentificadorDTO(identificador);
     }
 
     @Override

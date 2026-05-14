@@ -23,6 +23,4 @@ public class CodigoQR implements TipoIdentificador {
     private boolean esPar(Integer cantidadDeLetras) {
         return cantidadDeLetras % 2 == 0;
     }
-
-
 }

@@ -33,8 +33,4 @@ public class Identificador {
     public TipoIdentificadorEnum getTipoIdentificador() {
         return tipoIdentificador.getEnum();
     }
-
-    public void setTipoIdentificador(TipoIdentificadorEnum tipoIdentificadorEnum) {
-        // TODO
-    }
 }

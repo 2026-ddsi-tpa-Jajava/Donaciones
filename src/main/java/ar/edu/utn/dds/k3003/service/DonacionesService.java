@@ -109,7 +109,7 @@ public class DonacionesService {
         return producto;
     }
 
-    private Identificador buscarIdentificador(String identificadorID) {
+    public Identificador buscarIdentificador(String identificadorID) {
         val identificador = this.identificadoresRepository.buscarPorId(identificadorID);
 
         if (identificador.isEmpty()) {
@@ -119,7 +119,7 @@ public class DonacionesService {
         return identificador.get();
     }
 
-    private Subcategoria buscarSubcategoria(String categoriaID) {
+    public Subcategoria buscarSubcategoria(String categoriaID) {
         val subcategoria = this.categoriaRepository.buscarSubcategoriaPorId(categoriaID);
 
         if (subcategoria.isEmpty()) {
