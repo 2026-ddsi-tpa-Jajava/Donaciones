@@ -1,5 +1,6 @@
 package ar.edu.utn.dds.k3003.repositories.donaciones.identificador;
 
+import ar.edu.utn.dds.k3003.exceptions.donaciones.IdentificadorNoEncontradoException;
 import ar.edu.utn.dds.k3003.model.donaciones.Donacion;
 import ar.edu.utn.dds.k3003.model.donaciones.Identificador;
 
@@ -24,10 +25,30 @@ public class InMemoryIdentificadoresRepo implements IdentificadoresRepository {
 
     @Override
     public Identificador guardar(Identificador identificador) {
-        identificador.setId(this.generarId());
-        identificadores.add(identificador);
+        if(identificador.getId() == null){
+            identificador.setId(this.generarId());
+            identificadores.add(identificador);
+        } else {
+            this.identificadores.removeIf(i -> i.tieneID(identificador.getId()));
+            this.identificadores.add(identificador);
+        }
+
 
         return identificador;
+    }
+
+    @Override
+    public List<Identificador> buscarTodos() {
+        return new ArrayList<>(this.identificadores);
+    }
+
+    @Override
+    public void eliminarPorID(String id) {
+        boolean eliminado = this.identificadores.removeIf(i -> i.tieneID(id));
+
+        if(eliminado){
+            throw new IdentificadorNoEncontradoException("No se encontró el identificador con ID: " + id);
+        }
     }
 
     private String generarId() {

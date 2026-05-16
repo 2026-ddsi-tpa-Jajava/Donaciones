@@ -3,10 +3,7 @@ package ar.edu.utn.dds.k3003.service;
 import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.EstadoDonacionEnum;
 import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.ProductoDTO;
 import ar.edu.utn.dds.k3003.exceptions.donaciones.*;
-import ar.edu.utn.dds.k3003.model.donaciones.Donacion;
-import ar.edu.utn.dds.k3003.model.donaciones.Identificador;
-import ar.edu.utn.dds.k3003.model.donaciones.Producto;
-import ar.edu.utn.dds.k3003.model.donaciones.Subcategoria;
+import ar.edu.utn.dds.k3003.model.donaciones.*;
 import ar.edu.utn.dds.k3003.repositories.donaciones.categoria.CategoriaRepository;
 import ar.edu.utn.dds.k3003.repositories.donaciones.categoria.InMemoryCategoriaRepo;
 import ar.edu.utn.dds.k3003.repositories.donaciones.donacion.DonacionesRepository;
@@ -171,5 +168,18 @@ public class DonacionesService {
         val productoActualizado = this.productoRepository.guardar(producto);
 
         return productoActualizado;
+    }
+
+    public List<Identificador> buscarTodosLosIdentificadores() {
+        return this.identificadoresRepository.buscarTodos();
+    }
+
+    public void eliminarIdentificador(String id) {
+        this.identificadoresRepository.eliminarPorID(id);
+    }
+
+    public Categoria darAltaCategoria(Categoria categoria) {
+        // TODO
+        return null;
     }
 }

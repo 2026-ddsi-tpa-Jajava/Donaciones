@@ -31,7 +31,7 @@ public class ProductoController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProductoDTO>> obtenerTodosLosProductos() {
+    public ResponseEntity<List<ProductoDTO>> obtenerProductos() {
         List<ProductoDTO> productos = this.fachada.obtenerTodosLosProductos();
         return ResponseEntity.ok(productos);
     }
