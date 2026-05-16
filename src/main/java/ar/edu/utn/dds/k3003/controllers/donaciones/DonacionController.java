@@ -56,7 +56,7 @@ public class DonacionController {
     }
 
     @DeleteMapping("/{id}")
-    public  ResponseEntity<DonacionDTO> eliminarDonacion(@PathVariable String id) {
+    public  ResponseEntity<Void> eliminarDonacion(@PathVariable String id) {
         try {
             this.fachada.eliminarDonacion(id);
             return ResponseEntity.noContent().build();

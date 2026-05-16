@@ -14,4 +14,8 @@ public interface ProductoRepository {
     void actualizar(Producto producto);
 
     List<Producto> buscarPorSubcategoria(String subcategoriaID);
+
+    List<Producto> buscarTodos();
+
+    void eliminarPorId(String id);
 }

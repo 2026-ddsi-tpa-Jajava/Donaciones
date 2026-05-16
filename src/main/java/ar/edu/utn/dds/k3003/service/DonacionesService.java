@@ -1,6 +1,7 @@
 package ar.edu.utn.dds.k3003.service;
 
 import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.EstadoDonacionEnum;
+import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.ProductoDTO;
 import ar.edu.utn.dds.k3003.exceptions.donaciones.*;
 import ar.edu.utn.dds.k3003.model.donaciones.Donacion;
 import ar.edu.utn.dds.k3003.model.donaciones.Identificador;
@@ -105,7 +106,9 @@ public class DonacionesService {
         producto.setIdentificador(identificador);
         producto.setSubcategoria(subcategoria);
 
-        return producto;
+        val productoRegistrado = this.productoRepository.guardar(producto);
+
+        return productoRegistrado;
     }
 
     public Identificador buscarIdentificador(String identificadorID) {
@@ -145,5 +148,28 @@ public class DonacionesService {
 
     public void eliminarDonacion(String id) {
         this.donacionesRepository.eliminarPorId(id);
+    }
+
+    public List<Producto> buscarTodosLosProductos() {
+        return this.productoRepository.buscarTodos();
+    }
+
+    public void eliminarProducto(String id) {
+        this.productoRepository.eliminarPorId(id);
+    }
+
+    public Producto actualizarProducto(String id, ProductoDTO actualizacion) {
+        val producto = this.buscarProducto(id);
+        val identificador = this.buscarIdentificador(actualizacion.identificadorID());
+        val subcategoria = this.buscarSubcategoria(actualizacion.categoriaID());
+
+        producto.setNombre(actualizacion.nombre());
+        producto.setDescripcion(actualizacion.descripcion());
+        producto.setSubcategoria(subcategoria);
+        producto.setIdentificador(identificador);
+
+        val productoActualizado = this.productoRepository.guardar(producto);
+
+        return productoActualizado;
     }
 }

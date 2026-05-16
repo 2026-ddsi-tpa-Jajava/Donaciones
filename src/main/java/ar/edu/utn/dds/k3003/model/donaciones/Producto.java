@@ -10,8 +10,10 @@ public class Producto {
     @Setter
     @Getter
     private String id;
+    @Setter
     @Getter
     private String nombre;
+    @Setter
     @Getter
     private String descripcion;
     @Setter

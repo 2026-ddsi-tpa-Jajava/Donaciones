@@ -152,6 +152,21 @@ public class Fachada implements FachadaDonaciones{
     public void eliminarDonacion(String id) {
         this.donacionesService.eliminarDonacion(id);
     }
+
+    public List<ProductoDTO> obtenerTodosLosProductos() {
+        val productos = this.donacionesService.buscarTodosLosProductos();
+        return productos.stream().map(producto -> this.productoDataMapper.toProductoDTO(producto)).toList();
+    }
+
+    public void eliminarProducto(String id) {
+        this.donacionesService.eliminarProducto(id);
+    }
+
+    public ProductoDTO actualizarProducto(String id, ProductoDTO productoDTO) {
+        val productoActualizado = this.donacionesService.actualizarProducto(id, productoDTO);
+
+        return this.productoDataMapper.toProductoDTO(productoActualizado);
+    }
 }
 
 //@Service

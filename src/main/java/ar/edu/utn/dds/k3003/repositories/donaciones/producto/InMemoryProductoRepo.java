@@ -1,5 +1,7 @@
 package ar.edu.utn.dds.k3003.repositories.donaciones.producto;
 
+import ar.edu.utn.dds.k3003.exceptions.donaciones.ProductoNoEncontradoException;
+import ar.edu.utn.dds.k3003.model.donaciones.Donacion;
 import ar.edu.utn.dds.k3003.model.donaciones.Producto;
 
 import java.util.ArrayList;
@@ -24,8 +26,13 @@ public class InMemoryProductoRepo implements ProductoRepository {
 
     @Override
     public Producto guardar(Producto producto) {
-        producto.setId(this.generarID());
-        this.productos.add(producto);
+        if (producto.getId() == null) {
+            producto.setId(this.generarID());
+            this.productos.add(producto);
+        } else {
+            this.productos.removeIf(d -> d.tieneID(producto.getId()));
+            this.productos.add(producto);
+        }
 
         return producto;
     }
@@ -42,6 +49,20 @@ public class InMemoryProductoRepo implements ProductoRepository {
     public List<Producto> buscarPorSubcategoria(String subcategoriaID) {
         return this.productos.stream().filter(producto -> producto.tieneSubcategoria(subcategoriaID))
                 .toList();
+    }
+
+    @Override
+    public List<Producto> buscarTodos() {
+        return new ArrayList<>(this.productos);
+    }
+
+    @Override
+    public void eliminarPorId(String id) {
+        boolean eliminado = this.productos.removeIf(producto -> producto.tieneID(id));
+
+        if (!eliminado) {
+            throw new ProductoNoEncontradoException("No se encontró el producto con ID: " + id);
+        }
     }
 
 }
