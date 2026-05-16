@@ -1,18 +1,17 @@
 package ar.edu.utn.dds.k3003.service;
 
 import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.EstadoDonacionEnum;
-import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.TipoIdentificadorEnum;
 import ar.edu.utn.dds.k3003.exceptions.donaciones.*;
 import ar.edu.utn.dds.k3003.model.donaciones.Donacion;
 import ar.edu.utn.dds.k3003.model.donaciones.Identificador;
 import ar.edu.utn.dds.k3003.model.donaciones.Producto;
 import ar.edu.utn.dds.k3003.model.donaciones.Subcategoria;
-import ar.edu.utn.dds.k3003.repositories.donaciones.Categoria.CategoriaRepository;
-import ar.edu.utn.dds.k3003.repositories.donaciones.Categoria.InMemoryCategoriaRepo;
-import ar.edu.utn.dds.k3003.repositories.donaciones.Donacion.DonacionesRepository;
-import ar.edu.utn.dds.k3003.repositories.donaciones.Donacion.InMemoryDonacionesRepo;
-import ar.edu.utn.dds.k3003.repositories.donaciones.Producto.InMemoryProductoRepo;
-import ar.edu.utn.dds.k3003.repositories.donaciones.Producto.ProductoRepository;
+import ar.edu.utn.dds.k3003.repositories.donaciones.categoria.CategoriaRepository;
+import ar.edu.utn.dds.k3003.repositories.donaciones.categoria.InMemoryCategoriaRepo;
+import ar.edu.utn.dds.k3003.repositories.donaciones.donacion.DonacionesRepository;
+import ar.edu.utn.dds.k3003.repositories.donaciones.donacion.InMemoryDonacionesRepo;
+import ar.edu.utn.dds.k3003.repositories.donaciones.producto.InMemoryProductoRepo;
+import ar.edu.utn.dds.k3003.repositories.donaciones.producto.ProductoRepository;
 import ar.edu.utn.dds.k3003.repositories.donaciones.identificador.IdentificadoresRepository;
 import ar.edu.utn.dds.k3003.repositories.donaciones.identificador.InMemoryIdentificadoresRepo;
 import lombok.val;
@@ -138,5 +137,13 @@ public class DonacionesService {
         val identificadorGuardado = this.identificadoresRepository.guardar(identificador);
 
         return identificadorGuardado;
+    }
+
+    public List<Donacion> buscarTodasDonaciones() {
+        return this.donacionesRepository.buscarTodas();
+    }
+
+    public void eliminarDonacion(String id) {
+        this.donacionesRepository.eliminarPorId(id);
     }
 }

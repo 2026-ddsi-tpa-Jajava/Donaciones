@@ -1,11 +1,10 @@
 package ar.edu.utn.dds.k3003;
 
-import ar.edu.utn.dds.k3003.catedra.dtos.donadoresYEntidades.*;
 import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaDonadoresYEntidades;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import ar.edu.utn.dds.k3003.repositories.donaciones.Producto.ProductoDataMapper;
+import ar.edu.utn.dds.k3003.repositories.donaciones.producto.ProductoDataMapper;
 import ar.edu.utn.dds.k3003.repositories.donaciones.identificador.IdentificadoresDataMapper;
 import ar.edu.utn.dds.k3003.service.DonacionesService;
 import lombok.val;
@@ -16,8 +15,7 @@ import ar.edu.utn.dds.k3003.catedra.dtos.donadoresYEntidades.QuejaDTO;
 import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaDonaciones;
 import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaLogistica;
 import ar.edu.utn.dds.k3003.exceptions.donaciones.*;
-import ar.edu.utn.dds.k3003.model.donaciones.*;
-import ar.edu.utn.dds.k3003.repositories.donaciones.Donacion.DonacionesDataMapper;
+import ar.edu.utn.dds.k3003.repositories.donaciones.donacion.DonacionesDataMapper;
 
 import java.time.LocalDate;
 
@@ -144,6 +142,15 @@ public class Fachada implements FachadaDonaciones{
     @Override
     public void setFachadaLogistica(FachadaLogistica fachadaLogistica) {
         this.fachadaLogistica = fachadaLogistica;
+    }
+
+    public List<DonacionDTO> obtenerTodasLasDonaciones() {
+        val donaciones = this.donacionesService.buscarTodasDonaciones();
+        return donaciones.stream().map(donacion -> this.donacionesDataMapper.toDonacionDTO(donacion)).toList();
+    }
+
+    public void eliminarDonacion(String id) {
+        this.donacionesService.eliminarDonacion(id);
     }
 }
 

@@ -1,4 +1,4 @@
-package ar.edu.utn.dds.k3003.repositories.donaciones.Categoria;
+package ar.edu.utn.dds.k3003.repositories.donaciones.categoria;
 
 import ar.edu.utn.dds.k3003.model.donaciones.Categoria;
 import ar.edu.utn.dds.k3003.model.donaciones.Subcategoria;

@@ -17,15 +17,15 @@ public class DonadorController {
   }
 
   // Opcion 1 utilizando @RequestMapping
-  @RequestMapping(method = RequestMethod.POST)
-  public ResponseEntity<DonadorDTO> postDonador(@RequestBody DonadorDTO donadorDTO) {
-    DonadorDTO donadorAgregado = fachada.agregarDonador(donadorDTO);
-    return ResponseEntity.ok(donadorAgregado);
-  }
+//  @RequestMapping(method = RequestMethod.POST)
+//  public ResponseEntity<DonadorDTO> postDonador(@RequestBody DonadorDTO donadorDTO) {
+//    DonadorDTO donadorAgregado = fachada.agregarDonador(donadorDTO);
+//    return ResponseEntity.ok(donadorAgregado);
+//  }
 
   // Opcion 2 utilizando @GetMapping
-  @GetMapping
-  public ResponseEntity<DonadorDTO> getDonadorByID(@RequestParam String donadorID) {
-    return ResponseEntity.status(HttpStatus.OK).body(this.fachada.buscarDonadorPorID(donadorID));
-  }
+//  @GetMapping
+//  public ResponseEntity<DonadorDTO> getDonadorByID(@RequestParam String donadorID) {
+//    return ResponseEntity.status(HttpStatus.OK).body(this.fachada.buscarDonadorPorID(donadorID));
+//  }
 }

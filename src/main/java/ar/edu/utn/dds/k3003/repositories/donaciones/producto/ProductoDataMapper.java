@@ -1,4 +1,4 @@
-package ar.edu.utn.dds.k3003.repositories.donaciones.Producto;
+package ar.edu.utn.dds.k3003.repositories.donaciones.producto;
 
 import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.ProductoDTO;
 import ar.edu.utn.dds.k3003.model.donaciones.Producto;

@@ -1,5 +1,6 @@
-package ar.edu.utn.dds.k3003.repositories.donaciones.Donacion;
+package ar.edu.utn.dds.k3003.repositories.donaciones.donacion;
 
+import ar.edu.utn.dds.k3003.exceptions.donaciones.DonacionNoEncontradaException;
 import ar.edu.utn.dds.k3003.model.donaciones.Donacion;
 
 import java.time.LocalDate;
@@ -24,8 +25,13 @@ public class InMemoryDonacionesRepo implements DonacionesRepository {
 
     @Override
     public Donacion guardar(Donacion donacion) {
-        donacion.setId(this.generarId());
-        this.donaciones.add(donacion);
+        if (donacion.getId() == null) {
+            donacion.setId(this.generarId());
+            this.donaciones.add(donacion);
+        } else {
+            this.donaciones.removeIf(d -> d.tieneID(donacion.getId()));
+            this.donaciones.add(donacion);
+        }
 
         return donacion;
     }
@@ -41,5 +47,19 @@ public class InMemoryDonacionesRepo implements DonacionesRepository {
 
     @Override
     public void actualizar(Donacion donacion) {
+    }
+
+    @Override
+    public List<Donacion> buscarTodas() {
+        return new ArrayList<>(this.donaciones);
+    }
+
+    @Override
+    public void eliminarPorId(String id) {
+        boolean eliminado = this.donaciones.removeIf(donacion -> donacion.tieneID(id));
+
+        if (!eliminado) {
+            throw new DonacionNoEncontradaException("No se encontró la donación con ID: " + id);
+        }
     }
 }
