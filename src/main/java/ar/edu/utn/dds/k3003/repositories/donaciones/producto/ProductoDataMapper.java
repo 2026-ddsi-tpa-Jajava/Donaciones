@@ -16,7 +16,7 @@ public class ProductoDataMapper {
                 producto.getId(),
                 producto.getNombre(),
                 producto.getDescripcion(),
-                producto.getSubcategoria().getId(),
+                producto.getSubcategoriaID(),
                 producto.getIdentificador().getId()
         );
     }

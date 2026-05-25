@@ -91,7 +91,7 @@ public class DonacionesService {
 
     public Producto darAltaProducto(Producto producto, String categoriaID, String identificadorID) {
 
-        if (this.buscarProducto(producto.getId()) != null)
+        if (producto.getId() != null && this.productoRepository.buscarPorId(producto.getId()).isPresent())
         {
             throw new ProductoYaRegistradoException("El producto con ID " + producto.getId() + " ya se encuentra registrado");
         }
@@ -101,7 +101,7 @@ public class DonacionesService {
 
         identificador.validar(producto);
         producto.setIdentificador(identificador);
-        producto.setSubcategoria(subcategoria);
+        producto.setSubcategoriaID(subcategoria);
 
         val productoRegistrado = this.productoRepository.guardar(producto);
 
@@ -118,18 +118,18 @@ public class DonacionesService {
         return identificador.get();
     }
 
-    public Subcategoria buscarSubcategoria(String categoriaID) {
-        val subcategoria = this.categoriaRepository.buscarSubcategoriaPorId(categoriaID);
+    public String buscarSubcategoria(String categoriaID) {
+        val categoria = this.categoriaRepository.buscarCategoriaPorId(categoriaID);
 
-        if (subcategoria.isEmpty()) {
+        if (categoria.isEmpty()) {
             throw new CategoriaNoEncontradaException("No se encontró subcategoria con ID " + categoriaID);
         }
 
-        return subcategoria.get();
+        return categoria.get().getSubcategoriaID();
     }
 
     public Identificador darAltaIdentificador(Identificador identificador) {
-        if (this.buscarIdentificador(identificador.getId()) != null)
+        if (identificador.getId() != null && this.identificadoresRepository.buscarPorId(identificador.getId()).isPresent())
         {
             throw new RuntimeException("El identificador con ID " + identificador.getId() + " se encuentra registrado");
         }
@@ -162,7 +162,7 @@ public class DonacionesService {
 
         producto.setNombre(actualizacion.nombre());
         producto.setDescripcion(actualizacion.descripcion());
-        producto.setSubcategoria(subcategoria);
+        producto.setSubcategoriaID(subcategoria);
         producto.setIdentificador(identificador);
 
         val productoActualizado = this.productoRepository.guardar(producto);
@@ -179,7 +179,20 @@ public class DonacionesService {
     }
 
     public Categoria darAltaCategoria(Categoria categoria) {
-        // TODO
+        if(categoria.getId() != null && this.categoriaRepository.buscarCategoriaPorId(categoria.getId()).isPresent())
+        {
+            throw new RuntimeException("La categoria con ID " + categoria.getId() + " se encuentra registrada");
+        }
+        this.categoriaRepository.guardar(categoria);
+
         return null;
+    }
+
+    public List<Categoria> buscarTodasCategorias() {
+        return this.categoriaRepository.buscarTodos();
+    }
+
+    public void eliminarCategoria(String id) {
+        this.categoriaRepository.eliminarPorId(id);
     }
 }

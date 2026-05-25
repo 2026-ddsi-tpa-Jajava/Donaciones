@@ -6,24 +6,21 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 
+@Setter
+@Getter
 public class Categoria {
-    @Setter
-    @Getter
     String id;
-    @Getter
     private String nombre;
-    @Getter
     private String descripcion;
-    @Getter
-    private List<Subcategoria> subcategorias;
+    private String subcategoriaID;
 
-    public Categoria(String nombre, String descripcion) {
+    public Categoria(String nombre, String descripcion, String subcategoriaID) {
         this.nombre = nombre;
         this.descripcion = descripcion;
-        this.subcategorias = new ArrayList<>();
+        this.subcategoriaID = subcategoriaID;
     }
 
-    public void agregarSubcategoria(Subcategoria nuevaSubcategoria) {
-        this.subcategorias.add(nuevaSubcategoria);
+    public boolean tieneID(String categoriaID) {
+        return this.getId().equals(categoriaID);
     }
 }

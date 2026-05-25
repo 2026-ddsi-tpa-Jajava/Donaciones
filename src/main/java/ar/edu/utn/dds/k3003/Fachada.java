@@ -180,10 +180,28 @@ public class Fachada implements FachadaDonaciones{
     }
 
     public CategoriaDTO agregarCategoria(CategoriaDTO categoriaDTO) {
-        // TODO
+        this.verificarCategoriaIngresada(categoriaDTO);
+        val categoria = this.categoriaDataMapper.toCategoria(categoriaDTO);
+        this.donacionesService.darAltaCategoria(categoria);
+
         return null;
     }
 
+    private void verificarCategoriaIngresada(CategoriaDTO categoriaDTO) {
+        if (categoriaDTO == null || categoriaDTO.id() != null) {
+            throw new DonacionInvalidaException("Categoria inválida");
+        }
+    }
+
+
+    public List<CategoriaDTO> obtenerTodasLasCategorias() {
+        val categorias = this.donacionesService.buscarTodasCategorias();
+        return categorias.stream().map(c -> this.categoriaDataMapper.toCategoriaDTO(c)).toList();
+    }
+
+    public void eliminarCategoria(String id) {
+        this.donacionesService.eliminarCategoria(id);
+    }
 }
 
 

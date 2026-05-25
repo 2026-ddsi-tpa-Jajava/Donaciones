@@ -16,6 +16,7 @@ public class InMemoryIdentificadoresRepo implements IdentificadoresRepository {
 
     public InMemoryIdentificadoresRepo() {
         this.identificadores = new ArrayList<>();
+        this.idSecuencia = new AtomicLong(1);
     }
 
     @Override

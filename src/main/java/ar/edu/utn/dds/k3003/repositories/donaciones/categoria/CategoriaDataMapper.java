@@ -9,7 +9,8 @@ public class CategoriaDataMapper {
     public Categoria toCategoria(CategoriaDTO categoriaDTO) {
         return new Categoria(
                 categoriaDTO.nombre(),
-                categoriaDTO.descripcion()
+                categoriaDTO.descripcion(),
+                categoriaDTO.subcategoriaID()
         );
     }
 
@@ -18,7 +19,7 @@ public class CategoriaDataMapper {
                 categoria.getId(),
                 categoria.getNombre(),
                 categoria.getDescripcion(),
-                categoria.getSubcategorias().stream().map(subcategoria -> subcategoria.getId()).toString()
+                categoria.getSubcategoriaID()
         );
     }
 }

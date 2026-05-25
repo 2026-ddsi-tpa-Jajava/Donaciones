@@ -5,22 +5,14 @@ import lombok.Setter;
 
 import java.util.Optional;
 
+@Setter
+@Getter
 public class Producto {
 
-    @Setter
-    @Getter
     private String id;
-    @Setter
-    @Getter
     private String nombre;
-    @Setter
-    @Getter
     private String descripcion;
-    @Setter
-    @Getter
-    private Subcategoria subcategoria;
-    @Setter
-    @Getter
+    private String subcategoriaID;
     private Identificador identificador;
 
     public Producto(String nombre, String descripcion) {
@@ -34,6 +26,6 @@ public class Producto {
     }
 
     public boolean tieneSubcategoria(String subcategoriaID) {
-        return this.subcategoria.getId().equals(subcategoriaID);
+        return this.subcategoriaID.equals(subcategoriaID);
     }
 }

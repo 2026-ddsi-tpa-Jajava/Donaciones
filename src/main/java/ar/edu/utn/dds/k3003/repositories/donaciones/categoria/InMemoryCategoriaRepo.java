@@ -1,5 +1,7 @@
 package ar.edu.utn.dds.k3003.repositories.donaciones.categoria;
 
+import ar.edu.utn.dds.k3003.exceptions.donaciones.CategoriaNoEncontradaException;
+import ar.edu.utn.dds.k3003.exceptions.donaciones.ProductoNoEncontradoException;
 import ar.edu.utn.dds.k3003.model.donaciones.Categoria;
 import ar.edu.utn.dds.k3003.model.donaciones.Subcategoria;
 
@@ -26,16 +28,9 @@ public class InMemoryCategoriaRepo implements CategoriaRepository {
     }
 
     @Override
-    public Optional<Subcategoria> buscarSubcategoriaPorId(String subcategoriaID) {
-        return this.categorias.stream()
-                .flatMap(categoria -> categoria.getSubcategorias().stream())
-                .filter(sub -> sub.getId().equals(subcategoriaID))
-                .findFirst();
-    }
-
-    @Override
     public Categoria guardar(Categoria categoria) {
         categoria.setId(this.generarIdCategoria());
+        categoria.setSubcategoriaID(this.generarIdSubcategoria());
         this.categorias.add(categoria);
 
         return categoria;
@@ -51,5 +46,19 @@ public class InMemoryCategoriaRepo implements CategoriaRepository {
 
     @Override
     public void actualizar(Categoria categoria) {
+    }
+
+    @Override
+    public List<Categoria> buscarTodos() {
+        return new ArrayList<>(this.categorias);
+    }
+
+    @Override
+    public void eliminarPorId(String id) {
+        boolean eliminado = this.categorias.removeIf(categoria -> categoria.tieneID(id));
+
+        if (!eliminado) {
+            throw new CategoriaNoEncontradaException("No se encontró la categoria con ID: " + id);
+        }
     }
 }

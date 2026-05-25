@@ -45,14 +45,8 @@ public class Donacion {
 
     public void agregarQueja(String descripcion) {
 
-        if(this.estado == EstadoDonacionEnum.INGRESADA){
-            throw new RuntimeException("No se puede agregar una queja en este momento");
-        }
-
-        if(this.estado == EstadoDonacionEnum.ACEPTADA){
-            this.setDescripcion(this.descripcion + ". Cuenta con la siguiente Queja: " + descripcion);
-            this.cambiarEstado(EstadoDonacionEnum.CONQUEJA);
-        }
+        this.cambiarEstado(EstadoDonacionEnum.CONQUEJA);
+        this.setDescripcion(this.descripcion + ". Cuenta con la siguiente Queja: " + descripcion);
     }
 
     public void cambiarEstado(EstadoDonacionEnum nuevoEstado) {
