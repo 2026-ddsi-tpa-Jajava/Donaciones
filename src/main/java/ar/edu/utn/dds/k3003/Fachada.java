@@ -9,6 +9,7 @@ import ar.edu.utn.dds.k3003.repositories.donaciones.producto.ProductoDataMapper;
 import ar.edu.utn.dds.k3003.repositories.donaciones.identificador.IdentificadoresDataMapper;
 import ar.edu.utn.dds.k3003.service.DonacionesService;
 import lombok.val;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.*;
@@ -60,6 +61,9 @@ public class Fachada implements FachadaDonaciones{
       }
 
     private void verificarDonador(String donadorID) {
+
+        this.fachadaDonadoresYEntidades.buscarDonadorPorID(donadorID);
+
         if (!fachadaDonadoresYEntidades.puedeDonar(donadorID)) {
             throw new DonadorNoAptoException("El donador no se encuentra apto para donar");
         }
@@ -136,11 +140,13 @@ public class Fachada implements FachadaDonaciones{
         return this.identificadoresDataMapper.toIdentificadorDTO(identificador);
     }
 
+    @Autowired
     @Override
     public void setFachadaDonadoresYEntidades(FachadaDonadoresYEntidades fachadaDonadoresYEntidades) {
         this.fachadaDonadoresYEntidades = fachadaDonadoresYEntidades;
     }
 
+    @Autowired
     @Override
     public void setFachadaLogistica(FachadaLogistica fachadaLogistica) {
         this.fachadaLogistica = fachadaLogistica;

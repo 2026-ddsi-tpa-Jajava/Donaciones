@@ -97,7 +97,10 @@ public class DonacionesService {
         }
 
         val identificador = this.buscarIdentificador(identificadorID);
-        val subcategoria = this.buscarSubcategoria(categoriaID);
+        String subcategoria = null;
+        if(categoriaID != null) {
+            subcategoria = this.buscarSubcategoria(categoriaID);
+        }
 
         identificador.validar(producto);
         producto.setIdentificador(identificador);
