@@ -13,7 +13,7 @@ public class DonadoresYEntidadesTest {
   @SneakyThrows
   @BeforeEach
   void setUp() {
-    instancia = new Fachada();
+//    instancia = new Fachada();
   }
 
   @Test
