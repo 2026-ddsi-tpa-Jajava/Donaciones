@@ -12,7 +12,7 @@ import ar.edu.utn.dds.k3003.mappers.IdentificadoresDataMapper;
 import ar.edu.utn.dds.k3003.service.DonacionesService;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.*;
 import ar.edu.utn.dds.k3003.catedra.dtos.donadoresYEntidades.QuejaDTO;
@@ -23,7 +23,7 @@ import ar.edu.utn.dds.k3003.mappers.DonacionesDataMapper;
 
 import java.time.LocalDate;
 
-@Service
+@Component
 public class Fachada implements FachadaDonaciones{
 
     private final DonacionesService donacionesService;
