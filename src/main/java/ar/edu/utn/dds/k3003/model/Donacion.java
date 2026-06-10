@@ -1,7 +1,8 @@
-package ar.edu.utn.dds.k3003.model.donaciones;
+package ar.edu.utn.dds.k3003.model;
 
 import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.EstadoDonacionEnum;
 import ar.edu.utn.dds.k3003.exceptions.donaciones.CambioEstadoInvalidoException;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,44 +10,65 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+@Setter
+@Getter
+@Entity
+@Table(name = "Donacion")
 public class Donacion {
-
-    @Setter
-    @Getter
-    private String id;
-    @Getter
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    @Column(name = "donador_id")
     private String donadorID;
-    @Getter
+    @Column(name = "deposito_id")
     private String depositoID;
-    @Setter
-    @Getter
+    @Column(length = 500)
     private String descripcion;
-    @Getter
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private EstadoDonacionEnum estado;
-    @Setter
-    @Getter
+    @ManyToOne
+    @JoinColumn(name = "producto_id", nullable = false)
     private Producto producto;
-    @Getter
+    @Column(nullable = false)
     private Integer cantidad;
+    @Column(nullable = false)
     private LocalDate fecha;
-    @Getter
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "donacion_id", nullable = false)
     private List<HistorialEstado> historialEstados;
+    @ElementCollection
+    @CollectionTable(name = "donacion_quejas", joinColumns = @JoinColumn(name = "donacion_id"))
+    @Column(name = "queja")
+    private List<String> quejas;
 
-    public Donacion(String donadorID, String depositoID, String descripcion, Integer cantidad) {
+    public Donacion() {
+    }
+
+    public Donacion(String donadorID, String depositoID, String descripcion, Producto producto, Integer cantidad) {
         this.donadorID = donadorID;
         this.depositoID = depositoID;
         this.descripcion = descripcion;
-        this.cantidad = cantidad;
         this.estado = EstadoDonacionEnum.INGRESADA;
+        this.producto = producto;
+        this.cantidad = cantidad;
         this.fecha = LocalDate.now();
-        this.historialEstados = new ArrayList<>();
         this.historialEstados.add(new HistorialEstado(this.estado, this.fecha));
+        this.quejas = new ArrayList<>();
     }
 
     public void agregarQueja(String descripcion) {
 
+        this.quejas.add(descripcion);
         this.cambiarEstado(EstadoDonacionEnum.CONQUEJA);
-        this.setDescripcion(this.descripcion + ". Cuenta con la siguiente Queja: " + descripcion);
+    }
+
+    public void retirarQueja(String descripcion) {
+        this.quejas.remove(descripcion);
+        this.setEstado(EstadoDonacionEnum.ACEPTADA);
+        if (!this.historialEstados.isEmpty()) {
+            this.historialEstados.removeLast();
+        }
     }
 
     public void cambiarEstado(EstadoDonacionEnum nuevoEstado) {
@@ -69,17 +91,5 @@ public class Donacion {
             case CONQUEJA ->
                     false;
         };
-    }
-
-    public boolean tieneID(String id) {
-        return this.getId().equals(id);
-    }
-
-    public boolean donadorConID(String donadorID){
-        return this.getDonadorID().equals(donadorID);
-    }
-
-    public boolean aPartirDeFecha(LocalDate fecha){
-        return !this.fecha.isBefore(fecha);
     }
 }

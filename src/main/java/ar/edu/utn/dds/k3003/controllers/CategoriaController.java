@@ -2,6 +2,7 @@ package ar.edu.utn.dds.k3003.controllers;
 
 import ar.edu.utn.dds.k3003.Fachada;
 import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.CategoriaDTO;
+import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.SubcategoriaDTO;
 import ar.edu.utn.dds.k3003.exceptions.donaciones.CategoriaNoEncontradaException;
 import ar.edu.utn.dds.k3003.exceptions.donaciones.ProductoNoEncontradoException;
 import org.springframework.http.HttpStatus;
@@ -33,8 +34,8 @@ public class CategoriaController {
 
     @GetMapping
     public ResponseEntity<List<CategoriaDTO>> obtenerCategorias() {
-        List<CategoriaDTO> productos = this.fachada.obtenerTodasLasCategorias();
-        return ResponseEntity.ok(productos);
+        List<CategoriaDTO> categorias = this.fachada.obtenerTodasLasCategorias();
+        return ResponseEntity.ok(categorias);
     }
 
     @DeleteMapping("/{id}")
@@ -46,4 +47,26 @@ public class CategoriaController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
+
+    // SUBCATEGORIAS
+    @PostMapping("/{id}/subcategorias")
+    public ResponseEntity<SubcategoriaDTO> agregarSubcategoria(@PathVariable String id, @RequestBody SubcategoriaDTO subcategoriaDTO) {
+        try {
+            SubcategoriaDTO nuevaSubcategoria = new SubcategoriaDTO(subcategoriaDTO.id(), subcategoriaDTO.nombre(), id);
+            SubcategoriaDTO subcategoria = this.fachada.agregarSubCategoria(nuevaSubcategoria);
+            return ResponseEntity.status(HttpStatus.CREATED).body(subcategoria);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
+    @GetMapping("/{id}/subcategorias")
+    public ResponseEntity<List<SubcategoriaDTO>> obtenerSubcategorias(@PathVariable String id) {
+        try {
+            List<SubcategoriaDTO> subcategorias = this.fachada.obtenerSubcategorias(id);
+            return ResponseEntity.ok(subcategorias);
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
 }

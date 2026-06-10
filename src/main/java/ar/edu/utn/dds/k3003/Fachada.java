@@ -4,54 +4,64 @@ import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaDonadoresYEntidades;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import ar.edu.utn.dds.k3003.repositories.donaciones.categoria.CategoriaDataMapper;
-import ar.edu.utn.dds.k3003.repositories.donaciones.producto.ProductoDataMapper;
-import ar.edu.utn.dds.k3003.repositories.donaciones.identificador.IdentificadoresDataMapper;
+import ar.edu.utn.dds.k3003.model.Subcategoria;
+import ar.edu.utn.dds.k3003.mappers.CategoriaDataMapper;
+import ar.edu.utn.dds.k3003.mappers.SubcategoriaDataMapper;
+import ar.edu.utn.dds.k3003.mappers.ProductoDataMapper;
+import ar.edu.utn.dds.k3003.mappers.IdentificadoresDataMapper;
 import ar.edu.utn.dds.k3003.service.DonacionesService;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.*;
 import ar.edu.utn.dds.k3003.catedra.dtos.donadoresYEntidades.QuejaDTO;
 import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaDonaciones;
 import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaLogistica;
 import ar.edu.utn.dds.k3003.exceptions.donaciones.*;
-import ar.edu.utn.dds.k3003.repositories.donaciones.donacion.DonacionesDataMapper;
+import ar.edu.utn.dds.k3003.mappers.DonacionesDataMapper;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 
 @Service
 public class Fachada implements FachadaDonaciones{
 
-    private DonacionesService donacionesService;
+    private final DonacionesService donacionesService;
     private FachadaDonadoresYEntidades fachadaDonadoresYEntidades;
     private FachadaLogistica fachadaLogistica;
-    private DonacionesDataMapper donacionesDataMapper = new DonacionesDataMapper();
-    private ProductoDataMapper productoDataMapper = new ProductoDataMapper();
-    private IdentificadoresDataMapper identificadoresDataMapper = new IdentificadoresDataMapper();
-    private CategoriaDataMapper categoriaDataMapper =  new CategoriaDataMapper();
+    private final DonacionesDataMapper donacionesDataMapper = new DonacionesDataMapper();
+    private final ProductoDataMapper productoDataMapper = new ProductoDataMapper();
+    private final IdentificadoresDataMapper identificadoresDataMapper = new IdentificadoresDataMapper();
+    private final CategoriaDataMapper categoriaDataMapper =  new CategoriaDataMapper();
+    private final SubcategoriaDataMapper  subcategoriaDataMapper = new SubcategoriaDataMapper();
 
-
-    public Fachada() {
-        donacionesService = new DonacionesService();
+    @Autowired
+    public Fachada(DonacionesService donacionesService) {
+        this.donacionesService = donacionesService;
     }
 
     @Override
     public DonacionDTO registrarDonacion(DonacionDTO donacionDTO) {
         this.verificarDonacionIngresada(donacionDTO);
-
         this.verificarDonador(donacionDTO.donadorID());
-        val donacion = this.donacionesDataMapper.toDonacion(donacionDTO);
-        val donacionRegistrada = donacionesService.gestionarDonacionRecibida(donacion, donacionDTO.productoID());
-        fachadaLogistica.gestionarDonacion(
-                donacionRegistrada.getDepositoID(),
-                donacionRegistrada.getId(),
-                donacionRegistrada.getProducto().getId(),
-                donacionRegistrada.getCantidad()
-        );
 
-        return this.donacionesDataMapper.toDonacionDTO(donacionRegistrada);
+        val donacionRegistrada = donacionesService.gestionarDonacionRecibida(donacionDTO);
+
+        try {
+            fachadaLogistica.gestionarDonacion(
+                    donacionRegistrada.getDepositoID(),
+                    donacionRegistrada.getId().toString(),
+                    donacionRegistrada.getProducto().getId().toString(),
+                    donacionRegistrada.getCantidad()
+            );
+
+            return this.donacionesDataMapper.toDonacionDTO(donacionRegistrada);
+
+        } catch (Exception e) {
+            donacionesService.eliminarDonacion(donacionRegistrada.getId());
+
+            throw new RuntimeException("Error de comunicación con Logística. La donación fue revertida para mantener la consistencia.", e);
+        }
     }
 
     private void verificarDonacionIngresada(DonacionDTO donacionDTO) {
@@ -71,38 +81,45 @@ public class Fachada implements FachadaDonaciones{
 
     @Override
     public DonacionDTO buscarDonacionPorID(String donacionID) throws NoSuchElementException {
-        val donacion = this.donacionesService.buscarDonacionPorId(donacionID);
+        Long longID = Long.parseLong(donacionID);
+        val donacion = this.donacionesService.buscarDonacionPorId(longID);
         return this.donacionesDataMapper.toDonacionDTO(donacion);
     }
 
     @Override
     public DonacionDTO cambiarEstadoDeDonacion(String donacionID, EstadoDonacionEnum estado) throws NoSuchElementException {
-        val donacion = this.donacionesService.cambiarEstadoDonacion(donacionID, estado);
+        Long longID = Long.parseLong(donacionID);
+        val donacion = this.donacionesService.cambiarEstadoDonacion(longID, estado);
         return this.donacionesDataMapper.toDonacionDTO(donacion);
     }
 
     @Override
     public List<DonacionDTO> buscarPorDonadorYFechaInicio(String donadorID, LocalDate fecha) throws NoSuchElementException {
         val donaciones = this.donacionesService.buscarDonacionPorDonadorYFechaInicio(donadorID, fecha);
-        return donaciones.stream().map(donacion -> this.donacionesDataMapper.toDonacionDTO(donacion)).toList();
+        return donaciones.stream().map(this.donacionesDataMapper::toDonacionDTO).toList();
     }
 
     @Override
     public DonacionDTO registrarQuejaEnDonacion(String donacionID, String descripcion) {
-        val donacion = this.donacionesService.buscarDonacionPorId(donacionID);
+        Long longID = Long.parseLong(donacionID);
+        val donacion = this.donacionesService.buscarDonacionPorId(longID);
         QuejaDTO quejaDTO = new QuejaDTO(null, donacionID, donacion.getDonadorID(), LocalDate.now(), descripcion);
-        this.fachadaDonadoresYEntidades.agregarQueja(quejaDTO);
         val donacionActualizada = this.donacionesService.registrarQueja(donacion, descripcion);
-
-        return this.donacionesDataMapper.toDonacionDTO(donacionActualizada);
+        try {
+            this.fachadaDonadoresYEntidades.agregarQueja(quejaDTO);
+            return this.donacionesDataMapper.toDonacionDTO(donacionActualizada);
+        } catch (Exception e) {
+            this.donacionesService.retirarQueja(donacion, descripcion);
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public ProductoDTO agregarProducto(ProductoDTO productoDTO) {
+
         this.verificarProductoIngresado(productoDTO);
 
-        val producto = this.productoDataMapper.toProducto(productoDTO);
-        val productoRegistrado = this.donacionesService.darAltaProducto(producto, productoDTO.categoriaID(), productoDTO.identificadorID());
+        val productoRegistrado = this.donacionesService.darAltaProducto(productoDTO);
 
         return this.productoDataMapper.toProductoDTO(productoRegistrado);
     }
@@ -115,15 +132,15 @@ public class Fachada implements FachadaDonaciones{
 
     @Override
     public ProductoDTO buscarProductoPorID(String productoID) throws NoSuchElementException {
-        val producto = this.donacionesService.buscarProducto(productoID);
+        Long longID = Long.parseLong(productoID);
+        val producto = this.donacionesService.buscarProducto(longID);
         return this.productoDataMapper.toProductoDTO(producto);
     }
 
     @Override
     public IdentificadorDTO agregarIdentificador(IdentificadorDTO identificadorDTO) {
         this.verificarIdentificadorIngresado(identificadorDTO);
-        val identificador = this.identificadoresDataMapper.toIdentificador(identificadorDTO);
-        val identificadorRegistrado = this.donacionesService.darAltaIdentificador(identificador);
+        val identificadorRegistrado = this.donacionesService.darAltaIdentificador(identificadorDTO);
 
         return this.identificadoresDataMapper.toIdentificadorDTO(identificadorRegistrado);
     }
@@ -136,7 +153,8 @@ public class Fachada implements FachadaDonaciones{
 
     @Override
     public IdentificadorDTO buscarIdentificadorPorID(String identificadorID) throws NoSuchElementException {
-        val identificador = this.donacionesService.buscarIdentificador(identificadorID);
+        Long longID = Long.parseLong(identificadorID);
+        val identificador = this.donacionesService.buscarIdentificador(longID);
         return this.identificadoresDataMapper.toIdentificadorDTO(identificador);
     }
 
@@ -154,43 +172,46 @@ public class Fachada implements FachadaDonaciones{
 
     public List<DonacionDTO> obtenerTodasLasDonaciones() {
         val donaciones = this.donacionesService.buscarTodasDonaciones();
-        return donaciones.stream().map(donacion -> this.donacionesDataMapper.toDonacionDTO(donacion)).toList();
+        return donaciones.stream().map(this.donacionesDataMapper::toDonacionDTO).toList();
     }
 
     public void eliminarDonacion(String id) {
-        this.donacionesService.eliminarDonacion(id);
+        Long donacionID = Long.parseLong(id);
+        this.donacionesService.eliminarDonacion(donacionID);
     }
 
     public List<ProductoDTO> obtenerTodosLosProductos() {
         val productos = this.donacionesService.buscarTodosLosProductos();
-        return productos.stream().map(producto -> this.productoDataMapper.toProductoDTO(producto)).toList();
+        return productos.stream().map(this.productoDataMapper::toProductoDTO).toList();
     }
 
     public void eliminarProducto(String id) {
-        this.donacionesService.eliminarProducto(id);
+        Long productoID = Long.parseLong(id);
+        this.donacionesService.eliminarProducto(productoID);
     }
 
     public ProductoDTO actualizarProducto(String id, ProductoDTO productoDTO) {
-        val productoActualizado = this.donacionesService.actualizarProducto(id, productoDTO);
+        Long productoID =  Long.parseLong(id);
+        val productoActualizado = this.donacionesService.actualizarProducto(productoID, productoDTO);
 
         return this.productoDataMapper.toProductoDTO(productoActualizado);
     }
 
     public List<IdentificadorDTO> obtenerTodasLosIdentificadores() {
         val identificadores = this.donacionesService.buscarTodosLosIdentificadores();
-        return identificadores.stream().map(identificador -> this.identificadoresDataMapper.toIdentificadorDTO(identificador)).toList();
+        return identificadores.stream().map(this.identificadoresDataMapper::toIdentificadorDTO).toList();
     }
 
     public void eliminarIdentificador(String id) {
-        this.donacionesService.eliminarIdentificador(id);
+        Long identificadorID = Long.parseLong(id);
+        this.donacionesService.eliminarIdentificador(identificadorID);
     }
 
     public CategoriaDTO agregarCategoria(CategoriaDTO categoriaDTO) {
         this.verificarCategoriaIngresada(categoriaDTO);
-        val categoria = this.categoriaDataMapper.toCategoria(categoriaDTO);
-        this.donacionesService.darAltaCategoria(categoria);
+        val categoriaGuardada = this.donacionesService.darAltaCategoria(categoriaDTO);
 
-        return null;
+        return this.categoriaDataMapper.toCategoriaDTO(categoriaGuardada);
     }
 
     private void verificarCategoriaIngresada(CategoriaDTO categoriaDTO) {
@@ -199,155 +220,38 @@ public class Fachada implements FachadaDonaciones{
         }
     }
 
-
     public List<CategoriaDTO> obtenerTodasLasCategorias() {
         val categorias = this.donacionesService.buscarTodasCategorias();
-        return categorias.stream().map(c -> this.categoriaDataMapper.toCategoriaDTO(c)).toList();
+        return categorias.stream().map(this.categoriaDataMapper::toCategoriaDTO).toList();
     }
 
     public void eliminarCategoria(String id) {
-        this.donacionesService.eliminarCategoria(id);
+        Long categoriaID = Long.parseLong(id);
+        this.donacionesService.eliminarCategoria(categoriaID);
+    }
+
+    public SubcategoriaDTO agregarSubCategoria (SubcategoriaDTO subcategoriaDTO) {
+        this.verificarSubcategoriaIngresada(subcategoriaDTO);
+        val subcategoriaGuardada = this.donacionesService.altaSubcategoria(subcategoriaDTO);
+
+        return this.subcategoriaDataMapper.toSubategoriaDTO(subcategoriaGuardada);
+    }
+
+    private void verificarSubcategoriaIngresada(SubcategoriaDTO subcategoriaDTO) {
+        if (subcategoriaDTO == null || subcategoriaDTO.id() != null) {
+            throw new DonacionInvalidaException("SubCategoria inválida");
+        }
+    }
+
+    public List<SubcategoriaDTO> obtenerSubcategorias(String categoriaID) {
+        Long longID = Long.parseLong(categoriaID);
+        List<Subcategoria> subcategorias = this.donacionesService.obtenerSubcategorias(longID);
+
+        return subcategorias.stream().map(this.subcategoriaDataMapper::toSubategoriaDTO).toList();
+    }
+
+    public void eliminarSubcategoria(String id) {
+        Long subcategoriaID = Long.parseLong(id);
+        this.donacionesService.eliminarSubcategoria(subcategoriaID);
     }
 }
-
-
-
-
-
-
-
-//@Service
-//public class Fachada implements FachadaDonadoresYEntidades {
-//
-//  private DonadoresRepository donadoresRepository;
-//  private DonadoresYEntidadesDataMapper donadoresYEntidadesDataMapper =
-//      new DonadoresYEntidadesDataMapper();
-//
-//  public Fachada() {
-//    /*
-//    Para que se ejecuten correctamente los tests, se necesita tener un constructor vacio
-//    Es decir, que no reciba parametros.
-//    Si necesitan un constructor con parametros
-//    Java permite tener varios constructores conviviendo sin conflictos.
-//    */
-//
-//    this.donadoresRepository = new InMemoryDonadoresRepo();
-//  }
-//
-//  @Override
-//  public DonadorDTO agregarDonador(DonadorDTO donadorDTO) {
-//    if (this.donadoresRepository.findById(donadorDTO.id()).isPresent()) {
-//      throw new DonadorYaExistenteException("Ya existe un donador con ese ID");
-//    }
-//
-//    val donador = donadoresYEntidadesDataMapper.toDonador(donadorDTO);
-//
-//    val donadorGuardado = this.donadoresRepository.save(donador);
-//
-//    return donadoresYEntidadesDataMapper.toDonadorDTO(donadorGuardado);
-//  }
-//
-//  @Override
-//  public DonadorDTO buscarDonadorPorID(String donadorID) throws NoSuchElementException {
-//    val donadorOptional = this.donadoresRepository.findById(donadorID);
-//
-//    if (donadorOptional.isEmpty()) {
-//      throw new DonadorNoEncontradoException("No existe un donador con ese ID");
-//    }
-//    val donadorFinal = donadorOptional.get();
-//
-//    return donadoresYEntidadesDataMapper.toDonadorDTO(donadorFinal);
-//  }
-//
-//  @Override
-//  public DonadorDTO modificarEstado(String donadorID, EstadoDonadorEnum estado)
-//      throws NoSuchElementException {
-//
-//    val donadorOptional = this.donadoresRepository.findById(donadorID);
-//
-//    if (donadorOptional.isEmpty()) {
-//      throw new DonadorNoEncontradoException("No existe un donador con ese ID");
-//    }
-//
-//    val donadorFinal = donadorOptional.get();
-//    donadorFinal.setEstado(estado);
-//
-//    this.donadoresRepository.deleteById(donadorID);
-//    this.donadoresRepository.save(donadorFinal);
-//
-//    return donadoresYEntidadesDataMapper.toDonadorDTO(donadorFinal);
-//  }
-//
-//  @Override
-//  public DonadorDTO modifcarCategoria(String donadorID, String categoria)
-//      throws NoSuchElementException {
-//    val donadorOptional = this.donadoresRepository.findById(donadorID);
-//    if (donadorOptional.isEmpty()) {
-//      throw new DonadorNoEncontradoException("No existe un donador con ese ID");
-//    }
-//    val donadorFinal = donadorOptional.get();
-//    donadorFinal.setCategoria(categoria);
-//
-//    this.donadoresRepository.deleteById(donadorID);
-//    this.donadoresRepository.save(donadorFinal);
-//
-//    return donadoresYEntidadesDataMapper.toDonadorDTO(donadorFinal);
-//  }
-//
-//  @Override
-//  public void setFachadaIncentivos(FachadaIncentivos fachadaIncentivos) {}
-//
-//  @Override
-//  public Boolean puedeDonar(String donadorID) throws NoSuchElementException {
-//    // A implementar por el alumno
-//    return null;
-//  }
-//
-//  @Override
-//  public List<NecesidadMaterialDTO> obtenerNecesidadesInsatisfechasDe(String productoSolicitadoID) {
-//    // A implementar por el alumno
-//    return List.of();
-//  }
-//
-//  @Override
-//  public List<QuejaDTO> obtenerQuejasDe(String donadorID) throws NoSuchElementException {
-//    // A implementar por el alumno
-//    return List.of();
-//  }
-//
-//  @Override
-//  public NecesidadMaterialDTO satisfacerNecesidad(String necesidadID, Integer cantidad)
-//      throws NoSuchElementException {
-//    // A implementar por el alumno
-//    return null;
-//  }
-//
-//  @Override
-//  public DonadorStatsDTO estadisticasDonador(String donadorID) {
-//    return null;
-//  }
-//
-//  @Override
-//  public EntidadBeneficaDTO agregarEntidad(EntidadBeneficaDTO entidadBeneficaDTO) {
-//    // A implementar por el alumno
-//    return null;
-//  }
-//
-//  @Override
-//  public EntidadBeneficaDTO buscarEntidadPorID(String entidadID) throws NoSuchElementException {
-//    // A implementar por el alumno
-//    return null;
-//  }
-//
-//  @Override
-//  public NecesidadMaterialDTO registrarNecesidad(NecesidadMaterialDTO necesidadMaterialDTO) {
-//    // A implementar por el alumno
-//    return null;
-//  }
-//
-//  @Override
-//  public QuejaDTO agregarQueja(QuejaDTO quejaDTO) throws NoSuchElementException {
-//    // A implementar por el alumno
-//    return null;
-//  }
-//}
