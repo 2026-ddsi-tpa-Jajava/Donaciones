@@ -1,54 +1,63 @@
 package ar.edu.utn.dds.k3003.service;
 
-import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.EstadoDonacionEnum;
-import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.ProductoDTO;
+import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.*;
 import ar.edu.utn.dds.k3003.exceptions.donaciones.*;
-import ar.edu.utn.dds.k3003.model.donaciones.*;
-import ar.edu.utn.dds.k3003.repositories.donaciones.categoria.CategoriaRepository;
-import ar.edu.utn.dds.k3003.repositories.donaciones.categoria.InMemoryCategoriaRepo;
-import ar.edu.utn.dds.k3003.repositories.donaciones.donacion.DonacionesRepository;
-import ar.edu.utn.dds.k3003.repositories.donaciones.donacion.InMemoryDonacionesRepo;
-import ar.edu.utn.dds.k3003.repositories.donaciones.producto.InMemoryProductoRepo;
-import ar.edu.utn.dds.k3003.repositories.donaciones.producto.ProductoRepository;
-import ar.edu.utn.dds.k3003.repositories.donaciones.identificador.IdentificadoresRepository;
-import ar.edu.utn.dds.k3003.repositories.donaciones.identificador.InMemoryIdentificadoresRepo;
+import ar.edu.utn.dds.k3003.model.*;
+import ar.edu.utn.dds.k3003.repositories.CategoriaRepository;
+import ar.edu.utn.dds.k3003.repositories.SubcategoriaRepository;
+import ar.edu.utn.dds.k3003.repositories.DonacionesRepository;
+import ar.edu.utn.dds.k3003.repositories.ProductoRepository;
+import ar.edu.utn.dds.k3003.repositories.IdentificadoresRepository;
 import lombok.val;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
 
+@Service
 public class DonacionesService {
+    private final DonacionesRepository donacionesRepository;
+    private final ProductoRepository productoRepository;
+    private final CategoriaRepository categoriaRepository;
+    private final IdentificadoresRepository identificadoresRepository;
+    private final SubcategoriaRepository subcategoriaRepository;
+    private final FabricaValidadoresIdentificador fabricaValidadores;
 
-    private DonacionesRepository donacionesRepository;
-    private ProductoRepository productoRepository;
-    private CategoriaRepository categoriaRepository;
-    private IdentificadoresRepository identificadoresRepository;
-
-
-    public DonacionesService() {
-        this.donacionesRepository = new InMemoryDonacionesRepo();
-        this.productoRepository = new InMemoryProductoRepo();
-        this.categoriaRepository = new InMemoryCategoriaRepo();
-        this.identificadoresRepository = new InMemoryIdentificadoresRepo();
+    @Autowired
+    public DonacionesService(DonacionesRepository donacionesRepository, ProductoRepository productoRepository, CategoriaRepository categoriaRepository, IdentificadoresRepository identificadoresRepository, SubcategoriaRepository subcategoriaRepository, FabricaValidadoresIdentificador fabricaValidadores) {
+        this.donacionesRepository = donacionesRepository;
+        this.productoRepository = productoRepository;
+        this.categoriaRepository = categoriaRepository;
+        this.identificadoresRepository = identificadoresRepository;
+        this.subcategoriaRepository = subcategoriaRepository;
+        this.fabricaValidadores = fabricaValidadores;
     }
 
-    public Donacion gestionarDonacionRecibida(Donacion donacion, String productoID) {
+    public Donacion gestionarDonacionRecibida(DonacionDTO donacionDTO) {
+        Long productoID = Long.parseLong(donacionDTO.productoID());
         val producto = this.buscarProducto(productoID);
-        donacion.setProducto(producto);
-        val donacionRegistrada = this.donacionesRepository.guardar(donacion);
+        Donacion donacion =  new Donacion(
+                donacionDTO.donadorID(),
+                donacionDTO.depositoID(),
+                donacionDTO.descripcion(),
+                producto,
+                donacionDTO.cantidad()
+        );
 
-        return donacionRegistrada;
+        return this.donacionesRepository.save(donacion);
     }
 
+    @Transactional
     public Donacion registrarQueja(Donacion donacion, String descripcion) {
         donacion.agregarQueja(descripcion);
-        this.donacionesRepository.actualizar(donacion);
 
-        return donacion;
+        return this.donacionesRepository.save(donacion);
     }
 
-    public Producto buscarProducto(String productoID) {
-        val producto = this.productoRepository.buscarPorId(productoID);
+    public Producto buscarProducto(Long productoID) {
+        val producto = this.productoRepository.findById(productoID);
 
         if (producto.isEmpty())
         {
@@ -58,8 +67,8 @@ public class DonacionesService {
         return producto.get();
     }
 
-    public Donacion buscarDonacionPorId(String donacionID) {
-        val donacion = this.donacionesRepository.buscarPorId(donacionID);
+    public Donacion buscarDonacionPorId(Long donacionID) {
+        val donacion = this.donacionesRepository.findById(donacionID);
 
         if (donacion.isEmpty())
         {
@@ -70,7 +79,7 @@ public class DonacionesService {
     }
 
     public List<Donacion> buscarDonacionPorDonadorYFechaInicio(String donadorID, LocalDate fecha) {
-        val donaciones = this.donacionesRepository.buscarPorIDyFecha(donadorID, fecha);
+        val donaciones = this.donacionesRepository.findByDonadorIDAndFechaGreaterThanEqual(donadorID, fecha);
 
         if (donaciones.isEmpty()) {
           throw new DonacionNoEncontradaException
@@ -79,40 +88,47 @@ public class DonacionesService {
 
         return donaciones;
     }
-
-    public Donacion cambiarEstadoDonacion(String donacionID, EstadoDonacionEnum estado) {
+    @Transactional
+    public Donacion cambiarEstadoDonacion(Long donacionID, EstadoDonacionEnum estado) {
         val donacion = this.buscarDonacionPorId(donacionID);
 
         donacion.cambiarEstado(estado);
-        this.donacionesRepository.actualizar(donacion);
 
         return donacion;
     }
 
-    public Producto darAltaProducto(Producto producto, String categoriaID, String identificadorID) {
-
-        if (producto.getId() != null && this.productoRepository.buscarPorId(producto.getId()).isPresent())
+    public Producto darAltaProducto(ProductoDTO productoDTO) {
+        Long productoID = Long.parseLong(productoDTO.id());
+        if (this.productoRepository.findById(productoID).isPresent())
         {
-            throw new ProductoYaRegistradoException("El producto con ID " + producto.getId() + " ya se encuentra registrado");
+            throw new ProductoYaRegistradoException("El producto con ID " + productoID + " ya se encuentra registrado");
         }
+
+        Long categoriaID = Long.parseLong(productoDTO.categoriaID());
+        Long identificadorID = Long.parseLong(productoDTO.identificadorID());
 
         val identificador = this.buscarIdentificador(identificadorID);
-        String subcategoria = null;
-        if(categoriaID != null) {
-            subcategoria = this.buscarSubcategoria(categoriaID);
+        Subcategoria subcategoria = this.buscarSubcategoria(categoriaID);
+
+        ValidadorIdentificador validador =
+                this.fabricaValidadores.obtenerValidador(identificador.getTipo());
+
+        if (!validador.esValido(productoDTO.nombre(), productoDTO.descripcion())) {
+            throw new ProductoInvalidoException("El producto no cumple las reglas de validación para su tipo de identificador.");
         }
 
-        identificador.validar(producto);
-        producto.setIdentificador(identificador);
-        producto.setSubcategoriaID(subcategoria);
+        Producto producto = new Producto(
+                productoDTO.nombre(),
+                productoDTO.descripcion(),
+                subcategoria,
+                identificador
+        );
 
-        val productoRegistrado = this.productoRepository.guardar(producto);
-
-        return productoRegistrado;
+        return this.productoRepository.save(producto);
     }
 
-    public Identificador buscarIdentificador(String identificadorID) {
-        val identificador = this.identificadoresRepository.buscarPorId(identificadorID);
+    public Identificador buscarIdentificador(Long identificadorID) {
+        val identificador = this.identificadoresRepository.findById(identificadorID);
 
         if (identificador.isEmpty()) {
             throw new IdentificadorNoEncontradoException("No se encontró identificador con ID " + identificadorID);
@@ -121,81 +137,132 @@ public class DonacionesService {
         return identificador.get();
     }
 
-    public String buscarSubcategoria(String categoriaID) {
-        val categoria = this.categoriaRepository.buscarCategoriaPorId(categoriaID);
+    public Categoria buscarCategoria(Long categoriaID) {
+        val categoria = this.categoriaRepository.findById(categoriaID);
 
         if (categoria.isEmpty()) {
-            throw new CategoriaNoEncontradaException("No se encontró subcategoria con ID " + categoriaID);
+            throw new CategoriaNoEncontradaException("No se encontró categoria con ID " + categoriaID);
         }
 
-        return categoria.get().getSubcategoriaID();
+        return categoria.get();
     }
 
-    public Identificador darAltaIdentificador(Identificador identificador) {
-        if (identificador.getId() != null && this.identificadoresRepository.buscarPorId(identificador.getId()).isPresent())
-        {
-            throw new RuntimeException("El identificador con ID " + identificador.getId() + " se encuentra registrado");
+    public Subcategoria buscarSubcategoria(Long subcategoriaID) {
+        val subcategoria = this.subcategoriaRepository.findById(subcategoriaID);
+
+        if (subcategoria.isEmpty()) {
+            throw new CategoriaNoEncontradaException("No se encontró subcategoria con ID " + subcategoriaID);
         }
 
-        val identificadorGuardado = this.identificadoresRepository.guardar(identificador);
+        return subcategoria.get();
+    }
 
-        return identificadorGuardado;
+    public Identificador darAltaIdentificador(IdentificadorDTO identificadorDTO) {
+        Long identificadorID = Long.parseLong(identificadorDTO.id());
+        if (this.identificadoresRepository.findById(identificadorID).isPresent())
+        {
+            throw new RuntimeException("El identificador con ID " + identificadorID + " se encuentra registrado");
+        }
+
+        Identificador identificador = new Identificador(
+          identificadorDTO.descripcion(),
+          identificadorDTO.tipo()
+        );
+
+        return this.identificadoresRepository.save(identificador);
     }
 
     public List<Donacion> buscarTodasDonaciones() {
-        return this.donacionesRepository.buscarTodas();
+        return this.donacionesRepository.findAll();
     }
 
-    public void eliminarDonacion(String id) {
-        this.donacionesRepository.eliminarPorId(id);
+    public void eliminarDonacion(Long id) {
+        this.donacionesRepository.deleteById(id);
     }
 
     public List<Producto> buscarTodosLosProductos() {
-        return this.productoRepository.buscarTodos();
+        return this.productoRepository.findAll();
     }
 
-    public void eliminarProducto(String id) {
-        this.productoRepository.eliminarPorId(id);
+    public void eliminarProducto(Long id) {
+        this.productoRepository.deleteById(id);
     }
 
-    public Producto actualizarProducto(String id, ProductoDTO actualizacion) {
+    public Producto actualizarProducto(Long id, ProductoDTO actualizacion) {
+        Long identificadorID = Long.parseLong(actualizacion.identificadorID());
+        Long categoriaID = Long.parseLong(actualizacion.categoriaID());
+
         val producto = this.buscarProducto(id);
-        val identificador = this.buscarIdentificador(actualizacion.identificadorID());
-        val subcategoria = this.buscarSubcategoria(actualizacion.categoriaID());
+        val identificador = this.buscarIdentificador(identificadorID);
+        val subcategoria = this.buscarSubcategoria(categoriaID);
 
         producto.setNombre(actualizacion.nombre());
         producto.setDescripcion(actualizacion.descripcion());
-        producto.setSubcategoriaID(subcategoria);
+        producto.setSubcategoria(subcategoria);
         producto.setIdentificador(identificador);
 
-        val productoActualizado = this.productoRepository.guardar(producto);
-
-        return productoActualizado;
+        return this.productoRepository.save(producto);
     }
 
     public List<Identificador> buscarTodosLosIdentificadores() {
-        return this.identificadoresRepository.buscarTodos();
+        return this.identificadoresRepository.findAll();
     }
 
-    public void eliminarIdentificador(String id) {
-        this.identificadoresRepository.eliminarPorID(id);
+    public void eliminarIdentificador(Long id) {
+        this.identificadoresRepository.deleteById(id);
     }
 
-    public Categoria darAltaCategoria(Categoria categoria) {
-        if(categoria.getId() != null && this.categoriaRepository.buscarCategoriaPorId(categoria.getId()).isPresent())
+    public Categoria darAltaCategoria(CategoriaDTO categoriaDTO) {
+        Long categoriaID = Long.parseLong(categoriaDTO.id());
+        if(this.categoriaRepository.findById(categoriaID).isPresent())
         {
-            throw new RuntimeException("La categoria con ID " + categoria.getId() + " se encuentra registrada");
+            throw new RuntimeException("La categoria con ID " + categoriaID + " se encuentra registrada");
         }
-        this.categoriaRepository.guardar(categoria);
 
-        return null;
+        Categoria categoria = new Categoria(
+                categoriaDTO.nombre(),
+                categoriaDTO.descripcion()
+        );
+
+        return this.categoriaRepository.save(categoria);
     }
 
     public List<Categoria> buscarTodasCategorias() {
-        return this.categoriaRepository.buscarTodos();
+        return this.categoriaRepository.findAll();
     }
 
-    public void eliminarCategoria(String id) {
-        this.categoriaRepository.eliminarPorId(id);
+    public void eliminarCategoria(Long id) {
+        this.categoriaRepository.deleteById(id);
+    }
+
+    public Subcategoria altaSubcategoria(SubcategoriaDTO subcategoriaDTO) {
+        Long subcategoriaID = Long.parseLong(subcategoriaDTO.id());
+        if (this.subcategoriaRepository.findById(subcategoriaID).isPresent())
+        {
+            throw new RuntimeException("La subcategoria con ID " + subcategoriaID + " se encuentra registrada");
+        }
+        Long categoriaID = Long.parseLong(subcategoriaDTO.categoriaID());
+        val categoria = this.buscarCategoria(categoriaID);
+
+        Subcategoria subcategoria = new Subcategoria(
+                subcategoriaDTO.nombre(),
+                categoria
+        ) ;
+
+        return this.subcategoriaRepository.save(subcategoria);
+    }
+
+    public List<Subcategoria> obtenerSubcategorias(Long categoriaID) {
+        return this.subcategoriaRepository.findByCategoria_Id(categoriaID);
+    }
+
+    public void eliminarSubcategoria(Long subcategoriaID) {
+        this.subcategoriaRepository.deleteById(subcategoriaID);
+    }
+
+    public Donacion retirarQueja(Donacion donacion, String descripcion) {
+        donacion.retirarQueja(descripcion);
+
+        return this.donacionesRepository.save(donacion);
     }
 }
