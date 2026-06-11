@@ -31,10 +31,10 @@ public class DonacionController {
         try {
             DonacionDTO donacionRegistrada = this.fachada.registrarDonacion(donacionDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(donacionRegistrada);
-        } catch (DonadorNoAptoException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        } catch (DonadorNoEncontradoException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+//        } catch (DonadorNoAptoException e) {
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+//        } catch (DonadorNoEncontradoException e) {
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (Exception e) {
             e.printStackTrace();
             throw e;
