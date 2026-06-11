@@ -98,11 +98,11 @@ public class DonacionesService {
     }
 
     public Producto darAltaProducto(ProductoDTO productoDTO) {
-        Long productoID = Long.parseLong(productoDTO.id());
-        if (this.productoRepository.findById(productoID).isPresent())
-        {
-            throw new ProductoYaRegistradoException("El producto con ID " + productoID + " ya se encuentra registrado");
-        }
+//        Long productoID = Long.parseLong(productoDTO.id());
+//        if (this.productoRepository.findById(productoID).isPresent())
+//        {
+//            throw new ProductoYaRegistradoException("El producto con ID " + productoID + " ya se encuentra registrado");
+//        }
 
         Long categoriaID = Long.parseLong(productoDTO.categoriaID());
         Long identificadorID = Long.parseLong(productoDTO.identificadorID());
@@ -213,11 +213,11 @@ public class DonacionesService {
     }
 
     public Categoria darAltaCategoria(CategoriaDTO categoriaDTO) {
-        Long categoriaID = Long.parseLong(categoriaDTO.id());
-        if(this.categoriaRepository.findById(categoriaID).isPresent())
-        {
-            throw new RuntimeException("La categoria con ID " + categoriaID + " se encuentra registrada");
-        }
+//        Long categoriaID = Long.parseLong(categoriaDTO.id());
+//        if(this.categoriaRepository.findById(categoriaID).isPresent())
+//        {
+//            throw new RuntimeException("La categoria con ID " + categoriaID + " se encuentra registrada");
+//        }
 
         Categoria categoria = new Categoria(
                 categoriaDTO.nombre(),
@@ -236,11 +236,11 @@ public class DonacionesService {
     }
 
     public Subcategoria altaSubcategoria(SubcategoriaDTO subcategoriaDTO) {
-        Long subcategoriaID = Long.parseLong(subcategoriaDTO.id());
-        if (this.subcategoriaRepository.findById(subcategoriaID).isPresent())
-        {
-            throw new RuntimeException("La subcategoria con ID " + subcategoriaID + " se encuentra registrada");
-        }
+//        Long subcategoriaID = Long.parseLong(subcategoriaDTO.id());
+//        if (this.subcategoriaRepository.findById(subcategoriaID).isPresent())
+//        {
+//            throw new RuntimeException("La subcategoria con ID " + subcategoriaID + " se encuentra registrada");
+//        }
         Long categoriaID = Long.parseLong(subcategoriaDTO.categoriaID());
         val categoria = this.buscarCategoria(categoriaID);
 
