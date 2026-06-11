@@ -1,5 +1,6 @@
 package ar.edu.utn.dds.k3003.clients;
 
+import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.BooleanDTO;
 import ar.edu.utn.dds.k3003.catedra.dtos.donadoresYEntidades.*;
 import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaDonadoresYEntidades;
 import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaIncentivos;
@@ -33,11 +34,14 @@ public class DonadoresYEntidadesClient implements FachadaDonadoresYEntidades {
     {
         try {
             String url = this.urlBase + "/donadores/" + donadorID + "/puede-donar";
-            return HttpClientBuilder.get(url, Boolean.class);
+            HttpClientBuilder.get(url, BooleanDTO.class);
+            BooleanDTO respuesta = HttpClientBuilder.get(url, BooleanDTO.class);
+            return respuesta.puedeDonar();
         } catch (Exception e) {
             throw new RuntimeException("Error al buscar Donador por ID: " + donadorID, e);
         }
     }
+
     @Override
     public QuejaDTO agregarQueja(QuejaDTO quejaDTO) throws NoSuchElementException {
         try {
