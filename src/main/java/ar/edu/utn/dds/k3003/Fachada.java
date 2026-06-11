@@ -10,6 +10,7 @@ import ar.edu.utn.dds.k3003.mappers.SubcategoriaDataMapper;
 import ar.edu.utn.dds.k3003.mappers.ProductoDataMapper;
 import ar.edu.utn.dds.k3003.mappers.IdentificadoresDataMapper;
 import ar.edu.utn.dds.k3003.service.DonacionesService;
+import io.micrometer.core.instrument.Metrics;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -55,6 +56,8 @@ public class Fachada implements FachadaDonaciones{
                     donacionRegistrada.getCantidad()
             );
 
+            Metrics.counter("donaciones.registradas").increment();
+
             return this.donacionesDataMapper.toDonacionDTO(donacionRegistrada);
 
         } catch (Exception e) {
@@ -90,6 +93,8 @@ public class Fachada implements FachadaDonaciones{
     public DonacionDTO cambiarEstadoDeDonacion(String donacionID, EstadoDonacionEnum estado) throws NoSuchElementException {
         Long longID = Long.parseLong(donacionID);
         val donacion = this.donacionesService.cambiarEstadoDonacion(longID, estado);
+        Metrics.counter("donaciones.estado.cambios").increment();
+
         return this.donacionesDataMapper.toDonacionDTO(donacion);
     }
 
