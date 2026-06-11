@@ -34,9 +34,11 @@ public class Donacion {
     private Integer cantidad;
     @Column(nullable = false)
     private LocalDate fecha;
+
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "donacion_id", nullable = false)
     private List<HistorialEstado> historialEstados;
+
     @ElementCollection
     @CollectionTable(name = "donacion_quejas", joinColumns = @JoinColumn(name = "donacion_id"))
     @Column(name = "queja")
@@ -53,6 +55,7 @@ public class Donacion {
         this.producto = producto;
         this.cantidad = cantidad;
         this.fecha = LocalDate.now();
+        this.historialEstados = new ArrayList<>();
         this.historialEstados.add(new HistorialEstado(this.estado, this.fecha));
         this.quejas = new ArrayList<>();
     }
