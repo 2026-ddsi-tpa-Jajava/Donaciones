@@ -35,6 +35,9 @@ public class DonacionController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         } catch (DonadorNoEncontradoException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
         }
     }
 
