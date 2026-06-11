@@ -49,10 +49,10 @@ public class CategoriaController {
     }
 
     // SUBCATEGORIAS
-    @PostMapping("/{id}/subcategorias")
-    public ResponseEntity<SubcategoriaDTO> agregarSubcategoria(@PathVariable String id, @RequestBody SubcategoriaDTO subcategoriaDTO) {
+    @PostMapping("/{categoriaID}/subcategorias")
+    public ResponseEntity<SubcategoriaDTO> agregarSubcategoria(@PathVariable String categoriaID, @RequestBody SubcategoriaDTO subcategoriaDTO) {
         try {
-            SubcategoriaDTO nuevaSubcategoria = new SubcategoriaDTO(subcategoriaDTO.id(), subcategoriaDTO.nombre(), id);
+            SubcategoriaDTO nuevaSubcategoria = new SubcategoriaDTO(null, subcategoriaDTO.nombre(), categoriaID);
             SubcategoriaDTO subcategoria = this.fachada.agregarSubCategoria(nuevaSubcategoria);
             return ResponseEntity.status(HttpStatus.CREATED).body(subcategoria);
         } catch (Exception e) {
