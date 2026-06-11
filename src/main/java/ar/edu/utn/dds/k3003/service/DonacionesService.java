@@ -158,11 +158,11 @@ public class DonacionesService {
     }
 
     public Identificador darAltaIdentificador(IdentificadorDTO identificadorDTO) {
-        Long identificadorID = Long.parseLong(identificadorDTO.id());
-        if (this.identificadoresRepository.findById(identificadorID).isPresent())
-        {
-            throw new RuntimeException("El identificador con ID " + identificadorID + " se encuentra registrado");
-        }
+//        Long identificadorID = Long.parseLong(identificadorDTO.id());
+//        if (this.identificadoresRepository.findById(identificadorID).isPresent())
+//        {
+//            throw new RuntimeException("El identificador con ID " + identificadorID + " se encuentra registrado");
+//        }
 
         Identificador identificador = new Identificador(
           identificadorDTO.descripcion(),
