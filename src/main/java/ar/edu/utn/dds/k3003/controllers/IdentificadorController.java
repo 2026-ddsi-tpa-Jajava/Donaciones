@@ -26,7 +26,9 @@ public class IdentificadorController {
             IdentificadorDTO categoria = this.fachada.agregarIdentificador(identificadorDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(categoria);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
 
