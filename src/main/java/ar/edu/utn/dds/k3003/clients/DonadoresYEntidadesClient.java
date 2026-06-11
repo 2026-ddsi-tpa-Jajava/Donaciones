@@ -12,8 +12,8 @@ import java.util.NoSuchElementException;
 @Component
 public class DonadoresYEntidadesClient implements FachadaDonadoresYEntidades {
 
-    @Value("https://agusb1101-donadores-entidades.onrender.com/")
-    private String urlBase;
+//    @Value("https://agusb1101-donadores-entidades.onrender.com/")
+    private String urlBase = "https://agusb1101-donadores-entidades.onrender.com/";
 
     @Override
     public DonadorDTO buscarDonadorPorID(String donadorID) throws NoSuchElementException {
