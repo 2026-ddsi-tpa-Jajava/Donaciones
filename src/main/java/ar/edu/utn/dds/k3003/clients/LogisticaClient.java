@@ -26,11 +26,13 @@ public class LogisticaClient implements FachadaLogistica {
     public DepositoDTO gestionarDonacion(String depositoID, String donacionID, String productoID, Integer cantidad) throws NoSuchElementException {
         try {
             String url =  urlBase + "/depositos/" + depositoID + "/donacion";
-
+            System.out.println("url: " + url);
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("donacionID", donacionID);
-            requestBody.put("productoID", productoID);
+            requestBody.put("producto", productoID);
             requestBody.put("cantidad", cantidad);
+
+            System.out.println("body : " + requestBody);
 
             return HttpClientBuilder.post(url, requestBody, DepositoDTO.class);
         } catch (Exception e) {
