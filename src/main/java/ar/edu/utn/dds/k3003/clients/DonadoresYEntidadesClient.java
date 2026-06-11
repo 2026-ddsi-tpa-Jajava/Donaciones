@@ -34,7 +34,6 @@ public class DonadoresYEntidadesClient implements FachadaDonadoresYEntidades {
     {
         try {
             String url = this.urlBase + "/donadores/" + donadorID + "/puede-donar";
-            HttpClientBuilder.get(url, BooleanDTO.class);
             BooleanDTO respuesta = HttpClientBuilder.get(url, BooleanDTO.class);
             return respuesta.puedeDonar();
         } catch (Exception e) {
