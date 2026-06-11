@@ -20,7 +20,7 @@ import java.util.NoSuchElementException;
 public class LogisticaClient implements FachadaLogistica {
 
 //    @Value("https://logistica-hjaw.onrender.com/")
-    private String urlBase= "https://logistica-hjaw.onrender.com/";
+    private String urlBase= "https://logistica-hjaw.onrender.com";
 
     @Override
     public DepositoDTO gestionarDonacion(String depositoID, String donacionID, String productoID, Integer cantidad) throws NoSuchElementException {
