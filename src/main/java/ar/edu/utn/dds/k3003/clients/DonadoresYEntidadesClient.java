@@ -19,7 +19,10 @@ public class DonadoresYEntidadesClient implements FachadaDonadoresYEntidades {
     public DonadorDTO buscarDonadorPorID(String donadorID) throws NoSuchElementException {
         try {
             String url = this.urlBase + "/donadores/" + donadorID;
-            return HttpClientBuilder.get(url, DonadorDTO.class);
+            System.out.println("URL : " + url);
+            var client = HttpClientBuilder.get(url, DonadorDTO.class);
+            System.out.println("client : " + client);
+            return client;
         } catch (Exception e) {
             throw new RuntimeException("Error al buscar Donador por ID: " + donadorID, e);
         }
