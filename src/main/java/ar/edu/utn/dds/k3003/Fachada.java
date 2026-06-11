@@ -43,19 +43,22 @@ public class Fachada implements FachadaDonaciones{
 
     @Override
     public DonacionDTO registrarDonacion(DonacionDTO donacionDTO) {
+        System.out.println("1");
         this.verificarDonacionIngresada(donacionDTO);
+        System.out.println("2");
         this.verificarDonador(donacionDTO.donadorID());
-
+        System.out.println("3");
         val donacionRegistrada = donacionesService.gestionarDonacionRecibida(donacionDTO);
 
         try {
+            System.out.println("6");
             fachadaLogistica.gestionarDonacion(
                     donacionRegistrada.getDepositoID(),
                     donacionRegistrada.getId().toString(),
                     donacionRegistrada.getProducto().getId().toString(),
                     donacionRegistrada.getCantidad()
             );
-
+            System.out.println("5");
             Metrics.counter("donaciones.registradas").increment();
 
             return this.donacionesDataMapper.toDonacionDTO(donacionRegistrada);

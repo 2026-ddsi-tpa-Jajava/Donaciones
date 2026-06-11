@@ -19,7 +19,7 @@ import java.util.NoSuchElementException;
 @Component
 public class LogisticaClient implements FachadaLogistica {
 
-//    @Value("https://logistica-hjaw.onrender.com/")
+//    @Value("https://logistica-hjaw.onrender.com")
     private String urlBase= "https://logistica-hjaw.onrender.com";
 
     @Override

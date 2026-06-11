@@ -12,7 +12,7 @@ import java.util.NoSuchElementException;
 @Component
 public class DonadoresYEntidadesClient implements FachadaDonadoresYEntidades {
 
-//    @Value("https://agusb1101-donadores-entidades.onrender.com/")
+//    @Value("https://agusb1101-donadores-entidades.onrender.com")
     private String urlBase = "https://agusb1101-donadores-entidades.onrender.com";
 
     @Override
