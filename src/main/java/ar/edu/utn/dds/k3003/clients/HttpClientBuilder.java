@@ -41,6 +41,7 @@ public class HttpClientBuilder {
 
     private static <T, G> T sendBody(String url, G body, Class<T> clazz, String method) throws Exception {
         HttpRequest request = prepareRequest(url, body, method);
+        System.out.println("REQUEST: " + request);
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         System.out.println("STATUS: " + response.statusCode());
         System.out.println("BODY: " + response.body());
