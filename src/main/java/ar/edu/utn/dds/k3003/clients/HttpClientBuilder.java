@@ -41,7 +41,6 @@ public class HttpClientBuilder {
 
     private static <T, G> T sendBody(String url, G body, Class<T> clazz, String method) throws Exception {
         HttpRequest request = prepareRequest(url, body, method);
-        System.out.println("REQUEST: " + request);
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         System.out.println("STATUS: " + response.statusCode());
         System.out.println("BODY: " + response.body());
@@ -59,6 +58,7 @@ public class HttpClientBuilder {
             return builder(url).GET().build();
         }
         String json = objectMapper.writeValueAsString(body);
+        System.out.println("REQUEST: " + json);
         return builder(url)
                 .header("Content-Type", "application/json") // Added required content-type header for POST/PATCH
                 .method(method, HttpRequest.BodyPublishers.ofString(json))
