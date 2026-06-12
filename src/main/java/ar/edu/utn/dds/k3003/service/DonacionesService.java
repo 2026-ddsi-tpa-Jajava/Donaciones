@@ -265,4 +265,12 @@ public class DonacionesService {
 
         return this.donacionesRepository.save(donacion);
     }
+
+    public void resetear() {
+        subcategoriaRepository.deleteAll();
+        categoriaRepository.deleteAll();
+        identificadoresRepository.deleteAll();
+        productoRepository.deleteAll();
+        donacionesRepository.deleteAll();
+    }
 }

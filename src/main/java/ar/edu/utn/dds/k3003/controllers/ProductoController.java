@@ -3,6 +3,7 @@ package ar.edu.utn.dds.k3003.controllers;
 import ar.edu.utn.dds.k3003.Fachada;
 import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.ProductoDTO;
 import ar.edu.utn.dds.k3003.exceptions.donaciones.ProductoNoEncontradoException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,8 +15,9 @@ import java.util.NoSuchElementException;
 @RequestMapping("/productos")
 public class ProductoController {
 
-    private Fachada fachada;
+    private final Fachada fachada;
 
+    @Autowired
     public ProductoController(Fachada fachada) {
         this.fachada = fachada;
     }

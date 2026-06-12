@@ -5,6 +5,7 @@ import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.CategoriaDTO;
 import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.SubcategoriaDTO;
 import ar.edu.utn.dds.k3003.exceptions.donaciones.CategoriaNoEncontradaException;
 import ar.edu.utn.dds.k3003.exceptions.donaciones.ProductoNoEncontradoException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,8 +17,9 @@ import java.util.NoSuchElementException;
 @RequestMapping("/categorias")
 public class CategoriaController {
 
-    private Fachada fachada;
+    private final Fachada fachada;
 
+    @Autowired
     public CategoriaController(Fachada fachada) {
         this.fachada = fachada;
     }

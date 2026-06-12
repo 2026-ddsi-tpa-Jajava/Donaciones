@@ -263,4 +263,8 @@ public class Fachada implements FachadaDonaciones{
         Long subcategoriaID = Long.parseLong(id);
         this.donacionesService.eliminarSubcategoria(subcategoriaID);
     }
+
+    public void resetear() {
+        this.donacionesService.resetear();
+    }
 }

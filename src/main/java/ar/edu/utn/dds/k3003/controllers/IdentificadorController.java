@@ -3,6 +3,7 @@ package ar.edu.utn.dds.k3003.controllers;
 import ar.edu.utn.dds.k3003.Fachada;
 import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.IdentificadorDTO;
 import ar.edu.utn.dds.k3003.exceptions.donaciones.IdentificadorNoEncontradoException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,8 +15,9 @@ import java.util.NoSuchElementException;
 @RequestMapping("/identificadores")
 public class IdentificadorController {
 
-    private Fachada fachada;
+    private final Fachada fachada;
 
+    @Autowired
     public IdentificadorController(Fachada fachada) {
         this.fachada = fachada;
     }
@@ -26,9 +28,8 @@ public class IdentificadorController {
             IdentificadorDTO categoria = this.fachada.agregarIdentificador(identificadorDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(categoria);
         } catch (Exception e) {
-            e.printStackTrace();
+//            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
 
