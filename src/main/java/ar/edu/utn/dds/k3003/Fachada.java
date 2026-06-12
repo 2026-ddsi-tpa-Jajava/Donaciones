@@ -43,22 +43,17 @@ public class Fachada implements FachadaDonaciones{
 
     @Override
     public DonacionDTO registrarDonacion(DonacionDTO donacionDTO) {
-        System.out.println("1");
         this.verificarDonacionIngresada(donacionDTO);
-        System.out.println("2");
         this.verificarDonador(donacionDTO.donadorID());
-        System.out.println("3");
         val donacionRegistrada = donacionesService.gestionarDonacionRecibida(donacionDTO);
 
         try {
-            System.out.println("6");
             fachadaLogistica.gestionarDonacion(
                     donacionRegistrada.getDepositoID(),
                     donacionRegistrada.getId().toString(),
                     donacionRegistrada.getProducto().getId().toString(),
                     donacionRegistrada.getCantidad()
             );
-            System.out.println("5");
             Metrics.counter("donaciones.registradas").increment();
 
             return this.donacionesDataMapper.toDonacionDTO(donacionRegistrada);
@@ -77,13 +72,10 @@ public class Fachada implements FachadaDonaciones{
       }
 
     private void verificarDonador(String donadorID) {
-        System.out.println("A");
         this.fachadaDonadoresYEntidades.buscarDonadorPorID(donadorID);
-        System.out.println("B");
         if (!fachadaDonadoresYEntidades.puedeDonar(donadorID)) {
             throw new DonadorNoAptoException("El donador no se encuentra apto para donar");
         }
-        System.out.println("C");
     }
 
     @Override
@@ -116,6 +108,7 @@ public class Fachada implements FachadaDonaciones{
         val donacionActualizada = this.donacionesService.registrarQueja(donacion, descripcion);
         try {
             this.fachadaDonadoresYEntidades.agregarQueja(quejaDTO);
+            Metrics.counter("donaciones.queja.registrada").increment();
             return this.donacionesDataMapper.toDonacionDTO(donacionActualizada);
         } catch (Exception e) {
             this.donacionesService.retirarQueja(donacion, descripcion);
@@ -129,6 +122,8 @@ public class Fachada implements FachadaDonaciones{
         this.verificarProductoIngresado(productoDTO);
 
         val productoRegistrado = this.donacionesService.darAltaProducto(productoDTO);
+
+        Metrics.counter("donaciones.producto.registrado").increment();
 
         return this.productoDataMapper.toProductoDTO(productoRegistrado);
     }
@@ -150,6 +145,8 @@ public class Fachada implements FachadaDonaciones{
     public IdentificadorDTO agregarIdentificador(IdentificadorDTO identificadorDTO) {
         this.verificarIdentificadorIngresado(identificadorDTO);
         val identificadorRegistrado = this.donacionesService.darAltaIdentificador(identificadorDTO);
+
+        Metrics.counter("donaciones.identificador.registrado").increment();
 
         return this.identificadoresDataMapper.toIdentificadorDTO(identificadorRegistrado);
     }
@@ -203,6 +200,8 @@ public class Fachada implements FachadaDonaciones{
         Long productoID =  Long.parseLong(id);
         val productoActualizado = this.donacionesService.actualizarProducto(productoID, productoDTO);
 
+        Metrics.counter("donaciones.producto.actualizado").increment();
+
         return this.productoDataMapper.toProductoDTO(productoActualizado);
     }
 
@@ -219,6 +218,8 @@ public class Fachada implements FachadaDonaciones{
     public CategoriaDTO agregarCategoria(CategoriaDTO categoriaDTO) {
         this.verificarCategoriaIngresada(categoriaDTO);
         val categoriaGuardada = this.donacionesService.darAltaCategoria(categoriaDTO);
+
+        Metrics.counter("donaciones.categoria.registrada").increment();
 
         return this.categoriaDataMapper.toCategoriaDTO(categoriaGuardada);
     }
@@ -242,6 +243,8 @@ public class Fachada implements FachadaDonaciones{
     public SubcategoriaDTO agregarSubCategoria (SubcategoriaDTO subcategoriaDTO) {
         this.verificarSubcategoriaIngresada(subcategoriaDTO);
         val subcategoriaGuardada = this.donacionesService.altaSubcategoria(subcategoriaDTO);
+
+        Metrics.counter("donaciones.subcategoria.registrada").increment();
 
         return this.subcategoriaDataMapper.toSubategoriaDTO(subcategoriaGuardada);
     }
