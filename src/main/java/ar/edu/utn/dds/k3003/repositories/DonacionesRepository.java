@@ -10,4 +10,6 @@ import java.util.List;
 @Repository
 public interface DonacionesRepository extends JpaRepository<Donacion, Long> {
     List<Donacion> findByDonadorIDAndFechaGreaterThanEqual(String donadorID, LocalDate fecha);
+
+    List<Donacion> findByDonadorID(String donadorID);
 }

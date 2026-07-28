@@ -9,7 +9,7 @@ public class SubcategoriaDataMapper {
         return new SubcategoriaDTO(
                 subcategoria.getId().toString(),
                 subcategoria.getNombre(),
-                subcategoria.getCategoria() != null ? subcategoria.getCategoria().getId().toString() : null
+                subcategoria.getCategoria().getId().toString()
         );
     }
 }

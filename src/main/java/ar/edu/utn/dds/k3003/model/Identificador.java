@@ -13,7 +13,10 @@ public class Identificador {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(length = 500)
     private String descripcion;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TipoIdentificadorEnum tipo;

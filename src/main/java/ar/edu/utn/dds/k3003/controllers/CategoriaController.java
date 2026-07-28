@@ -3,18 +3,19 @@ package ar.edu.utn.dds.k3003.controllers;
 import ar.edu.utn.dds.k3003.Fachada;
 import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.CategoriaDTO;
 import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.SubcategoriaDTO;
-import ar.edu.utn.dds.k3003.exceptions.donaciones.CategoriaNoEncontradaException;
-import ar.edu.utn.dds.k3003.exceptions.donaciones.ProductoNoEncontradoException;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/categorias")
+@Validated
 public class CategoriaController {
 
     private final Fachada fachada;
@@ -25,13 +26,12 @@ public class CategoriaController {
     }
 
     @PostMapping
-    public ResponseEntity<CategoriaDTO> agregarCategoria(@RequestBody CategoriaDTO categoriaDTO) {
-        try {
-            CategoriaDTO categoria = this.fachada.agregarCategoria(categoriaDTO);
-            return ResponseEntity.status(HttpStatus.CREATED).body(categoria);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+    public ResponseEntity<CategoriaDTO> agregarCategoria(@Valid @RequestBody CategoriaDTO categoriaDTO) {
+        if (categoriaDTO.id() != null) {
+            throw new IllegalArgumentException("El ID debe ser nulo al crear una categoría");
         }
+        CategoriaDTO categoria = this.fachada.agregarCategoria(categoriaDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(categoria);
     }
 
     @GetMapping
@@ -41,34 +41,24 @@ public class CategoriaController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<CategoriaDTO> eliminarCategoria(@RequestBody String id) {
-        try {
-            this.fachada.eliminarCategoria(id);
-            return ResponseEntity.noContent().build();
-        } catch (CategoriaNoEncontradaException | NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+    public ResponseEntity<CategoriaDTO> eliminarCategoria(@PathVariable @Pattern(regexp = "^\\d+$", message = "El ID debe ser numérico") String id) {
+        this.fachada.eliminarCategoria(id);
+        return ResponseEntity.noContent().build();
     }
 
     // SUBCATEGORIAS
     @PostMapping("/{categoriaID}/subcategorias")
-    public ResponseEntity<SubcategoriaDTO> agregarSubcategoria(@PathVariable String categoriaID, @RequestBody SubcategoriaDTO subcategoriaDTO) {
-        try {
-            SubcategoriaDTO nuevaSubcategoria = new SubcategoriaDTO(null, subcategoriaDTO.nombre(), categoriaID);
-            SubcategoriaDTO subcategoria = this.fachada.agregarSubCategoria(nuevaSubcategoria);
-            return ResponseEntity.status(HttpStatus.CREATED).body(subcategoria);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+    public ResponseEntity<SubcategoriaDTO> agregarSubcategoria(@PathVariable @Pattern(regexp = "^\\d+$", message = "El ID debe ser numérico") String categoriaID, @Valid @RequestBody SubcategoriaDTO subcategoriaDTO) {
+        if (subcategoriaDTO.id() != null) {
+            throw new IllegalArgumentException("El ID debe ser nulo al crear una subcategoría");
         }
+        SubcategoriaDTO nuevaSubcategoria = new SubcategoriaDTO(null, subcategoriaDTO.nombre(), categoriaID);
+        SubcategoriaDTO subcategoria = this.fachada.agregarSubCategoria(nuevaSubcategoria);
+        return ResponseEntity.status(HttpStatus.CREATED).body(subcategoria);
     }
     @GetMapping("/{id}/subcategorias")
-    public ResponseEntity<List<SubcategoriaDTO>> obtenerSubcategorias(@PathVariable String id) {
-        try {
-            List<SubcategoriaDTO> subcategorias = this.fachada.obtenerSubcategorias(id);
-            return ResponseEntity.ok(subcategorias);
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+    public ResponseEntity<List<SubcategoriaDTO>> obtenerSubcategorias(@PathVariable @Pattern(regexp = "^\\d+$", message = "El ID debe ser numérico") String id) {
+        List<SubcategoriaDTO> subcategorias = this.fachada.obtenerSubcategorias(id);
+        return ResponseEntity.ok(subcategorias);
     }
-
 }

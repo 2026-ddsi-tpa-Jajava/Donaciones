@@ -1,7 +1,7 @@
 package ar.edu.utn.dds.k3003.service;
 
 import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.*;
-import ar.edu.utn.dds.k3003.exceptions.donaciones.*;
+import ar.edu.utn.dds.k3003.exceptions.*;
 import ar.edu.utn.dds.k3003.model.*;
 import ar.edu.utn.dds.k3003.repositories.CategoriaRepository;
 import ar.edu.utn.dds.k3003.repositories.SubcategoriaRepository;
@@ -79,15 +79,10 @@ public class DonacionesService {
     }
 
     public List<Donacion> buscarDonacionPorDonadorYFechaInicio(String donadorID, LocalDate fecha) {
-        val donaciones = this.donacionesRepository.findByDonadorIDAndFechaGreaterThanEqual(donadorID, fecha);
 
-        if (donaciones.isEmpty()) {
-          throw new DonacionNoEncontradaException
-                  ("No se encontraron donaciones para el donador con ID " + donadorID + "A partir de la fecha " + fecha);
-        }
-
-        return donaciones;
+        return this.donacionesRepository.findByDonadorIDAndFechaGreaterThanEqual(donadorID, fecha);
     }
+
     @Transactional
     public Donacion cambiarEstadoDonacion(Long donacionID, EstadoDonacionEnum estado) {
         val donacion = this.buscarDonacionPorId(donacionID);
@@ -98,16 +93,16 @@ public class DonacionesService {
     }
 
     public Producto darAltaProducto(ProductoDTO productoDTO) {
-//        Long productoID = Long.parseLong(productoDTO.id());
-//        if (this.productoRepository.findById(productoID).isPresent())
-//        {
-//            throw new ProductoYaRegistradoException("El producto con ID " + productoID + " ya se encuentra registrado");
-//        }
 
         Long categoriaID = Long.parseLong(productoDTO.categoriaID());
         Long identificadorID = Long.parseLong(productoDTO.identificadorID());
 
         val identificador = this.buscarIdentificador(identificadorID);
+
+        if(this.productoRepository.existsByIdentificador_Id(identificador.getId())) {
+            throw new IdentificadorAsignadoException("El identificador " + identificadorID + " ya se encuentra asignado a otro producto.");
+        }
+
         Subcategoria subcategoria = this.buscarSubcategoria(categoriaID);
 
         ValidadorIdentificador validador =
@@ -158,11 +153,6 @@ public class DonacionesService {
     }
 
     public Identificador darAltaIdentificador(IdentificadorDTO identificadorDTO) {
-//        Long identificadorID = Long.parseLong(identificadorDTO.id());
-//        if (this.identificadoresRepository.findById(identificadorID).isPresent())
-//        {
-//            throw new RuntimeException("El identificador con ID " + identificadorID + " se encuentra registrado");
-//        }
 
         Identificador identificador = new Identificador(
           identificadorDTO.descripcion(),
@@ -213,11 +203,6 @@ public class DonacionesService {
     }
 
     public Categoria darAltaCategoria(CategoriaDTO categoriaDTO) {
-//        Long categoriaID = Long.parseLong(categoriaDTO.id());
-//        if(this.categoriaRepository.findById(categoriaID).isPresent())
-//        {
-//            throw new RuntimeException("La categoria con ID " + categoriaID + " se encuentra registrada");
-//        }
 
         Categoria categoria = new Categoria(
                 categoriaDTO.nombre(),
@@ -236,11 +221,7 @@ public class DonacionesService {
     }
 
     public Subcategoria altaSubcategoria(SubcategoriaDTO subcategoriaDTO) {
-//        Long subcategoriaID = Long.parseLong(subcategoriaDTO.id());
-//        if (this.subcategoriaRepository.findById(subcategoriaID).isPresent())
-//        {
-//            throw new RuntimeException("La subcategoria con ID " + subcategoriaID + " se encuentra registrada");
-//        }
+
         Long categoriaID = Long.parseLong(subcategoriaDTO.categoriaID());
         val categoria = this.buscarCategoria(categoriaID);
 
@@ -260,10 +241,10 @@ public class DonacionesService {
         this.subcategoriaRepository.deleteById(subcategoriaID);
     }
 
-    public Donacion retirarQueja(Donacion donacion, String descripcion) {
+    public void retirarQueja(Donacion donacion, String descripcion) {
         donacion.retirarQueja(descripcion);
 
-        return this.donacionesRepository.save(donacion);
+        this.donacionesRepository.save(donacion);
     }
 
     public void resetear() {
@@ -272,5 +253,10 @@ public class DonacionesService {
         identificadoresRepository.deleteAll();
         productoRepository.deleteAll();
         donacionesRepository.deleteAll();
+    }
+
+    public List<Donacion> buscarDonacionPorDonador(String donadorID) {
+
+        return this.donacionesRepository.findByDonadorID(donadorID);
     }
 }

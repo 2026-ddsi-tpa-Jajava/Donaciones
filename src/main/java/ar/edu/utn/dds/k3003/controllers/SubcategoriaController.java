@@ -2,16 +2,10 @@ package ar.edu.utn.dds.k3003.controllers;
 
 import ar.edu.utn.dds.k3003.Fachada;
 import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.SubcategoriaDTO;
-import ar.edu.utn.dds.k3003.exceptions.donaciones.CategoriaNoEncontradaException;
+import jakarta.validation.constraints.Pattern;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.NoSuchElementException;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/subcategorias")
@@ -24,12 +18,8 @@ public class SubcategoriaController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<SubcategoriaDTO> eliminarSubcategoria(@RequestBody String id) {
-        try {
+    public ResponseEntity<SubcategoriaDTO> eliminarSubcategoria(@PathVariable @Pattern(regexp = "^\\d+$", message = "El ID debe ser numérico") String id) {
             this.fachada.eliminarSubcategoria(id);
             return ResponseEntity.noContent().build();
-        } catch (CategoriaNoEncontradaException | NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
     }
 }

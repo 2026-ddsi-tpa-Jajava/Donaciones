@@ -8,6 +8,8 @@ import ar.edu.utn.dds.k3003.catedra.dtos.logistica.TipoAlgoritmoEnum;
 import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaDonaciones;
 import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaDonadoresYEntidades;
 import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaLogistica;
+import ar.edu.utn.dds.k3003.exceptions.FalloServicioExternoException;
+import ar.edu.utn.dds.k3003.exceptions.PeticionExternaInvalidaException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -19,8 +21,8 @@ import java.util.NoSuchElementException;
 @Component
 public class LogisticaClient implements FachadaLogistica {
 
-//    @Value("https://logistica-hjaw.onrender.com")
-    private String urlBase= "https://logistica-hjaw.onrender.com";
+    @Value("${url.logistica}")
+    private String urlBase;
 
     @Override
     public DepositoDTO gestionarDonacion(String depositoID, String donacionID, String productoID, Integer cantidad) throws NoSuchElementException {
@@ -32,8 +34,10 @@ public class LogisticaClient implements FachadaLogistica {
             requestBody.put("cantidad", cantidad);
 
             return HttpClientBuilder.post(url, requestBody, DepositoDTO.class);
+        } catch (PeticionExternaInvalidaException e) {
+            throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Error al gestionar donacion con ID " + donacionID, e);
+            throw new FalloServicioExternoException("Error al gestionar donacion con ID " + donacionID, e);
         }
     }
 

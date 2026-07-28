@@ -1,5 +1,7 @@
 package ar.edu.utn.dds.k3003.clients;
 
+import ar.edu.utn.dds.k3003.exceptions.FalloServicioExternoException;
+import ar.edu.utn.dds.k3003.exceptions.PeticionExternaInvalidaException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
@@ -42,13 +44,30 @@ public class HttpClientBuilder {
     private static <T, G> T sendBody(String url, G body, Class<T> clazz, String method) throws Exception {
         HttpRequest request = prepareRequest(url, body, method);
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        validarEstadoRespuesta(response);
+
         return objectMapper.readValue(response.body(), clazz);
     }
 
     private static <T, G> T sendBody(String url, G body, TypeReference<T> typeRef, String method) throws Exception {
         HttpRequest request = prepareRequest(url, body, method);
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        validarEstadoRespuesta(response);
+
         return objectMapper.readValue(response.body(), typeRef);
+    }
+
+    private static void validarEstadoRespuesta(HttpResponse<String> response) {
+        if (response.statusCode() >= 400 && response.statusCode() < 500) {
+            throw new PeticionExternaInvalidaException(
+                    "El servicio externo rechazó la petición. Estado: " + response.statusCode(),
+                    response.statusCode()
+            );
+        } else if (response.statusCode() >= 500) {
+            throw new FalloServicioExternoException("El servicio externo falló internamente con estado: " + response.statusCode(), null);
+        }
     }
 
     private static <G> HttpRequest prepareRequest(String url, G body, String method) throws Exception {

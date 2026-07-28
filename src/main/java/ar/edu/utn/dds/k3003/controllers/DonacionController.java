@@ -2,23 +2,25 @@ package ar.edu.utn.dds.k3003.controllers;
 
 import ar.edu.utn.dds.k3003.Fachada;
 import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.DonacionDTO;
+import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.EstadoDTO;
 import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.EstadoDonacionEnum;
 import ar.edu.utn.dds.k3003.catedra.dtos.donadoresYEntidades.QuejaDTO;
-import ar.edu.utn.dds.k3003.exceptions.DonadorNoEncontradoException;
-import ar.edu.utn.dds.k3003.exceptions.donaciones.CambioEstadoInvalidoException;
-import ar.edu.utn.dds.k3003.exceptions.donaciones.DonacionNoEncontradaException;
-import ar.edu.utn.dds.k3003.exceptions.donaciones.DonadorNoAptoException;
+import ar.edu.utn.dds.k3003.exceptions.DonacionInvalidaException;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/donaciones")
+@Validated
 public class DonacionController {
 
     private final Fachada fachada;
@@ -29,80 +31,63 @@ public class DonacionController {
     }
 
     @PostMapping
-    public ResponseEntity<DonacionDTO> registrarDonacion(@RequestBody DonacionDTO donacionDTO) {
-        try {
-            DonacionDTO donacionRegistrada = this.fachada.registrarDonacion(donacionDTO);
-            return ResponseEntity.status(HttpStatus.CREATED).body(donacionRegistrada);
-        } catch (DonadorNoAptoException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        } catch (DonadorNoEncontradoException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    public ResponseEntity<DonacionDTO> registrarDonacion(@Valid @RequestBody DonacionDTO donacionDTO) {
+        if (donacionDTO.id() != null) {
+            throw new DonacionInvalidaException("El ID debe ser nulo al registrar una donación");
         }
+        DonacionDTO donacionRegistrada = this.fachada.registrarDonacion(donacionDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(donacionRegistrada);
     }
 
     @GetMapping
     public ResponseEntity<List<DonacionDTO>> obtenerDonaciones() {
         List<DonacionDTO> donaciones = this.fachada.obtenerTodasLasDonaciones();
         return ResponseEntity.ok(donaciones);
-
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<DonacionDTO> obtenerDonacion(@PathVariable String id) {
-        try {
-            DonacionDTO donacionBuscada = this.fachada.buscarDonacionPorID(id);
-            return ResponseEntity.ok(donacionBuscada);
-        }  catch (DonacionNoEncontradaException | NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+    public ResponseEntity<DonacionDTO> obtenerDonacion(@PathVariable @Pattern(regexp = "^\\d+$", message = "El ID debe ser numérico") String id) {
+        DonacionDTO donacionBuscada = this.fachada.buscarDonacionPorID(id);
+        return ResponseEntity.ok(donacionBuscada);
     }
 
     @DeleteMapping("/{id}")
-    public  ResponseEntity<Void> eliminarDonacion(@PathVariable String id) {
-        try {
-            this.fachada.eliminarDonacion(id);
-            return ResponseEntity.noContent().build();
-        } catch (DonacionNoEncontradaException | NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+    public ResponseEntity<Void> eliminarDonacion(@PathVariable Long id) {
+        this.fachada.eliminarDonacion(id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<DonacionDTO>> buscarDonacionPorDonadorYFecha(@RequestParam String donadorID, @RequestParam String fechaInicio) {
-        try {
-            LocalDate fecha = LocalDate.parse(fechaInicio);
-            List<DonacionDTO> donaciones = this.fachada.buscarPorDonadorYFechaInicio(donadorID, fecha);
+    public ResponseEntity<List<DonacionDTO>> buscarDonacionPorDonadorYFecha(
+            @RequestParam @NotBlank(message = "El donadorID es obligatorio") String donadorID,
+            @RequestParam(required = false) String fechaInicio) {
 
-            return ResponseEntity.ok(donaciones);
-        } catch (DonadorNoEncontradoException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        List<DonacionDTO> donaciones;
+
+        if (fechaInicio == null || fechaInicio.trim().isEmpty()) {
+            donaciones = this.fachada.buscarPorDonador(donadorID);
+        } else {
+            LocalDate fecha = LocalDate.parse(fechaInicio);
+            donaciones = this.fachada.buscarPorDonadorYFechaInicio(donadorID, fecha);
         }
+
+        return ResponseEntity.ok(donaciones);
     }
 
     @PatchMapping("/{id}/estado")
-    public ResponseEntity<DonacionDTO> ModificarEstadoDeDonacion(@PathVariable String id, @RequestBody EstadoDonacionEnum estado) {
-        try {
-            DonacionDTO donacionActualizada = this.fachada.cambiarEstadoDeDonacion(id, estado);
-            return  ResponseEntity.ok(donacionActualizada);
-        } catch (CambioEstadoInvalidoException e) {
-         return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        } catch (DonacionNoEncontradaException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+    public ResponseEntity<DonacionDTO> ModificarEstadoDeDonacion(@PathVariable @Pattern(regexp = "^\\d+$", message = "El ID debe ser numérico") String id, @RequestBody EstadoDTO request) {
+        DonacionDTO donacionActualizada = this.fachada.cambiarEstadoDeDonacion(id, request.estado());
+        return ResponseEntity.ok(donacionActualizada);
     }
 
     @PostMapping("/{id}/queja")
-    public ResponseEntity<DonacionDTO> registrarQuejaSobreDonacion(@PathVariable String id, @RequestBody QuejaDTO queja) {
-        try {
-            String descripcion = queja.descripcion();
-            DonacionDTO donacionActualizada = this.fachada.registrarQuejaEnDonacion(id,descripcion);
-            return ResponseEntity.status(HttpStatus.CREATED).body(donacionActualizada);
-        } catch (DonacionNoEncontradaException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+    public ResponseEntity<DonacionDTO> registrarQuejaSobreDonacion(@PathVariable @Pattern(regexp = "^\\d+$", message = "El ID debe ser numérico") String id, @RequestBody QuejaDTO queja) {
+        if (queja == null || queja.descripcion() == null || queja.descripcion().trim().isEmpty()) {
+            throw new DonacionInvalidaException("La descripción de la queja es obligatoria.");
         }
+
+        String descripcion = queja.descripcion();
+        DonacionDTO donacionActualizada = this.fachada.registrarQuejaEnDonacion(id, descripcion);
+        return ResponseEntity.status(HttpStatus.CREATED).body(donacionActualizada);
     }
 }

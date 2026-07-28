@@ -13,9 +13,11 @@ public class HistorialEstado {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EstadoDonacionEnum estado;
+
     @Column(nullable = false)
     private LocalDate fecha;
 

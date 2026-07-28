@@ -1,7 +1,7 @@
 package ar.edu.utn.dds.k3003.model;
 
 import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.EstadoDonacionEnum;
-import ar.edu.utn.dds.k3003.exceptions.donaciones.CambioEstadoInvalidoException;
+import ar.edu.utn.dds.k3003.exceptions.CambioEstadoInvalidoException;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,20 +18,27 @@ public class Donacion {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @Column(name = "donador_id")
     private String donadorID;
+
     @Column(name = "deposito_id")
     private String depositoID;
+
     @Column(length = 500)
     private String descripcion;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EstadoDonacionEnum estado;
+
     @ManyToOne
     @JoinColumn(name = "producto_id", nullable = false)
     private Producto producto;
+
     @Column(nullable = false)
     private Integer cantidad;
+
     @Column(nullable = false)
     private LocalDate fecha;
 

@@ -12,13 +12,17 @@ public class Producto {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @Column(nullable = false)
     private String nombre;
+
     @Column(length = 500)
     private String descripcion;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subcategoria_id", nullable = false)
     private Subcategoria subcategoria;
+
     @OneToOne
     @JoinColumn(name = "identificador_id", nullable = false,unique = true)
     private Identificador identificador;

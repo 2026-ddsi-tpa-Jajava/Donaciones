@@ -4,6 +4,8 @@ import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.BooleanDTO;
 import ar.edu.utn.dds.k3003.catedra.dtos.donadoresYEntidades.*;
 import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaDonadoresYEntidades;
 import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaIncentivos;
+import ar.edu.utn.dds.k3003.exceptions.FalloServicioExternoException;
+import ar.edu.utn.dds.k3003.exceptions.PeticionExternaInvalidaException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -13,8 +15,8 @@ import java.util.NoSuchElementException;
 @Component
 public class DonadoresYEntidadesClient implements FachadaDonadoresYEntidades {
 
-//    @Value("https://agusb1101-donadores-entidades.onrender.com")
-    private String urlBase = "https://agusb1101-donadores-entidades.onrender.com";
+    @Value("${url.donadores}")
+    private String urlBase;
 
     @Override
     public DonadorDTO buscarDonadorPorID(String donadorID) throws NoSuchElementException {
@@ -22,8 +24,10 @@ public class DonadoresYEntidadesClient implements FachadaDonadoresYEntidades {
             String url = this.urlBase + "/donadores/" + donadorID;
 
             return HttpClientBuilder.get(url, DonadorDTO.class);
+        } catch (PeticionExternaInvalidaException e) {
+            throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Error al buscar Donador por ID: " + donadorID, e);
+            throw new FalloServicioExternoException("Error al buscar Donador por ID: " + donadorID, e);
         }
     }
 
@@ -34,8 +38,10 @@ public class DonadoresYEntidadesClient implements FachadaDonadoresYEntidades {
             String url = this.urlBase + "/donadores/" + donadorID + "/puede-donar";
             BooleanDTO respuesta = HttpClientBuilder.get(url, BooleanDTO.class);
             return respuesta.puedeDonar();
+        } catch (PeticionExternaInvalidaException e) {
+            throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Error al buscar Donador por ID: " + donadorID, e);
+            throw new FalloServicioExternoException("Error al buscar Donador por ID: " + donadorID, e);
         }
     }
 
@@ -44,8 +50,10 @@ public class DonadoresYEntidadesClient implements FachadaDonadoresYEntidades {
         try {
             String url = this.urlBase + "/donadores/" + quejaDTO.donadorID() + "/quejas";
             return HttpClientBuilder.post(url, quejaDTO,  QuejaDTO.class);
+        } catch (PeticionExternaInvalidaException e) {
+            throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Error al agregar queja", e);
+            throw new FalloServicioExternoException("Error al agregar queja", e);
         }
     }
 

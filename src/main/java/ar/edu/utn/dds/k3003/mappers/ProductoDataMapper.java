@@ -10,8 +10,8 @@ public class ProductoDataMapper {
                 producto.getId().toString(),
                 producto.getNombre(),
                 producto.getDescripcion(),
-                producto.getSubcategoria() != null ? producto.getSubcategoria().getId().toString() : null,
-                producto.getIdentificador() != null ? producto.getIdentificador().getId().toString() : null
+                producto.getSubcategoria().getId().toString(),
+                producto.getIdentificador().getId().toString()
         );
     }
 }

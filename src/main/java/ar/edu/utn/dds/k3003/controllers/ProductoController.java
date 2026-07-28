@@ -2,17 +2,20 @@ package ar.edu.utn.dds.k3003.controllers;
 
 import ar.edu.utn.dds.k3003.Fachada;
 import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.ProductoDTO;
-import ar.edu.utn.dds.k3003.exceptions.donaciones.ProductoNoEncontradoException;
+import ar.edu.utn.dds.k3003.exceptions.ProductoInvalidoException;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/productos")
+@Validated
 public class ProductoController {
 
     private final Fachada fachada;
@@ -23,13 +26,12 @@ public class ProductoController {
     }
 
     @PostMapping
-    public ResponseEntity<ProductoDTO> agregarProducto(@RequestBody ProductoDTO productoDTO) {
-        try {
+    public ResponseEntity<ProductoDTO> agregarProducto(@Valid @RequestBody ProductoDTO productoDTO) {
+        if (productoDTO.id() != null) {
+            throw new ProductoInvalidoException("El ID debe ser nulo al crear un producto");
+        }
          ProductoDTO productoRegistrado = this.fachada.agregarProducto(productoDTO);
          return ResponseEntity.status(HttpStatus.CREATED).body(productoRegistrado);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
     }
 
     @GetMapping
@@ -39,32 +41,23 @@ public class ProductoController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProductoDTO> buscarProducto(@PathVariable  String id) {
-        try {
-            ProductoDTO producto = this.fachada.buscarProductoPorID(id);
-            return ResponseEntity.ok(producto);
-        } catch (ProductoNoEncontradoException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+    public ResponseEntity<ProductoDTO> buscarProducto(@PathVariable @Pattern(regexp = "^\\d+$", message = "El ID debe ser numérico") String id) {
+        ProductoDTO producto = this.fachada.buscarProductoPorID(id);
+        return ResponseEntity.ok(producto);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProductoDTO> modificarProducto(@PathVariable String id, @RequestBody ProductoDTO productoDTO) {
-        try {
-            ProductoDTO productoActualizado = this.fachada.actualizarProducto(id, productoDTO);
-            return ResponseEntity.ok(productoActualizado);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+    public ResponseEntity<ProductoDTO> modificarProducto(@PathVariable @Pattern(regexp = "^\\d+$", message = "El ID debe ser numérico") String id, @Valid @RequestBody ProductoDTO productoDTO) {
+        if (productoDTO.id() != null && !productoDTO.id().equals(id)) {
+            throw new ProductoInvalidoException("El ID del cuerpo de la petición no coincide con el recurso solicitado en la URL");
         }
+        ProductoDTO productoActualizado = this.fachada.actualizarProducto(id, productoDTO);
+        return ResponseEntity.ok(productoActualizado);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminarProducto(@PathVariable String id) {
-        try {
-            this.fachada.eliminarProducto(id);
-            return ResponseEntity.noContent().build();
-        } catch (ProductoNoEncontradoException | NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+    public ResponseEntity<Void> eliminarProducto(@PathVariable @Pattern(regexp = "^\\d+$", message = "El ID debe ser numérico") String id) {
+        this.fachada.eliminarProducto(id);
+        return ResponseEntity.noContent().build();
     }
 }
