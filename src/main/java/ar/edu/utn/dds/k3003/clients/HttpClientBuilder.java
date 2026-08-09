@@ -45,7 +45,7 @@ public class HttpClientBuilder {
         HttpRequest request = prepareRequest(url, body, method);
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-        validarEstadoRespuesta(response);
+        validarEstadoRespuesta(response, request);
 
         return objectMapper.readValue(response.body(), clazz);
     }
@@ -54,15 +54,15 @@ public class HttpClientBuilder {
         HttpRequest request = prepareRequest(url, body, method);
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-        validarEstadoRespuesta(response);
+        validarEstadoRespuesta(response, request);
 
         return objectMapper.readValue(response.body(), typeRef);
     }
 
-    private static void validarEstadoRespuesta(HttpResponse<String> response) {
+    private static void validarEstadoRespuesta(HttpResponse<String> response, HttpRequest request) {
         if (response.statusCode() >= 400 && response.statusCode() < 500) {
             throw new PeticionExternaInvalidaException(
-                    "El servicio externo rechazó la petición. Estado: " + response.statusCode(),
+                    "El servicio externo rechazó" + request.uri() + "la petición. Estado: " + response.statusCode(),
                     response.statusCode()
             );
         } else if (response.statusCode() >= 500) {

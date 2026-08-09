@@ -65,7 +65,10 @@ public class Fachada implements FachadaDonaciones{
 
         } catch (PeticionExternaInvalidaException e) {
             this.eliminarDonacion(donacionRegistrada.getId());
-            throw e;
+            throw new PeticionExternaInvalidaException(
+                    "Fallo en Logística: " + e.getMessage(),
+                    e.getStatusCode()
+            );
 
         } catch (FalloServicioExternoException e) {
             try {
