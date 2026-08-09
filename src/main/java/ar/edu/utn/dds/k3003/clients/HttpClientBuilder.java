@@ -62,7 +62,7 @@ public class HttpClientBuilder {
     private static void validarEstadoRespuesta(HttpResponse<String> response, HttpRequest request) {
         if (response.statusCode() >= 400 && response.statusCode() < 500) {
             throw new PeticionExternaInvalidaException(
-                    "El servicio externo rechazó" + request.uri() + "la petición. Estado: " + response.statusCode(),
+                    "El servicio externo en " + request.uri() + " rechazó la petición. Estado: " + response.statusCode(),
                     response.statusCode()
             );
         } else if (response.statusCode() >= 500) {

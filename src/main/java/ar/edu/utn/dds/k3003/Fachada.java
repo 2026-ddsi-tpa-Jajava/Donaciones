@@ -90,7 +90,7 @@ public class Fachada implements FachadaDonaciones{
     }
 
     private void verificarDonador(String donadorID) {
-        this.fachadaDonadoresYEntidades.buscarDonadorPorID(donadorID);
+//        this.fachadaDonadoresYEntidades.buscarDonadorPorID(donadorID);
         if (!fachadaDonadoresYEntidades.puedeDonar(donadorID)) {
             throw new DonadorNoAptoException("El donador no se encuentra apto para donar");
         }
