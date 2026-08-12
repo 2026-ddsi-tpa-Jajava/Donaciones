@@ -7,7 +7,10 @@ import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaIncentivos;
 import ar.edu.utn.dds.k3003.exceptions.FalloServicioExternoException;
 import ar.edu.utn.dds.k3003.exceptions.PeticionExternaInvalidaException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -15,80 +18,121 @@ import java.util.NoSuchElementException;
 @Component
 public class DonadoresYEntidadesClient implements FachadaDonadoresYEntidades {
 
-    @Value("${url.donadores}")
-    private String urlBase;
+    private final RestClient restClient;
 
-    @Override
-    public DonadorDTO buscarDonadorPorID(String donadorID) throws NoSuchElementException {
-        try {
-            String url = this.urlBase + "/donadores/" + donadorID;
+    public DonadoresYEntidadesClient(
+            @Value("${url.donadores}") String urlBase,
+            RestClient.Builder restClientBuilder) {
 
-            return HttpClientBuilder.get(url, DonadorDTO.class);
-        } catch (PeticionExternaInvalidaException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new FalloServicioExternoException("Error al buscar Donador por ID: " + donadorID, e);
-        }
+        this.restClient = restClientBuilder
+                .baseUrl(urlBase)
+                .defaultStatusHandler(status -> status.isSameCodeAs(HttpStatus.NOT_FOUND), (request, response) -> {
+                    throw new NoSuchElementException(
+                            String.format("Donadores y Entidades: Recurso no encontrado. Petición: %s %s",
+                                    request.getMethod(), request.getURI())
+                    );
+                })
+
+                .defaultStatusHandler(HttpStatusCode::is4xxClientError, (request, response) -> {
+                    throw new PeticionExternaInvalidaException(
+                            String.format("Donadores y Entidades: Petición rechazada (Estado %d). Petición: %s %s",
+                                    response.getStatusCode().value(), request.getMethod(), request.getURI()),
+                            response.getStatusCode().value()
+                    );
+                })
+
+                .defaultStatusHandler(HttpStatusCode::is5xxServerError, (request, response) -> {
+                    throw new FalloServicioExternoException(
+                            String.format("Donadores y Entidades: Fallo interno del servicio externo (Estado %d). Petición: %s %s",
+                                    response.getStatusCode().value(), request.getMethod(), request.getURI()),
+                            null
+                    );
+                })
+                .build();
     }
 
     @Override
-    public Boolean puedeDonar(String donadorID) throws NoSuchElementException
-    {
-        try {
-            String url = this.urlBase + "/donadores/" + donadorID + "/puede-donar";
-            BooleanDTO respuesta = HttpClientBuilder.get(url, BooleanDTO.class);
-            return respuesta.puedeDonar();
-        } catch (PeticionExternaInvalidaException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new FalloServicioExternoException("Error al buscar Donador por ID: " + donadorID, e);
-        }
+    public DonadorDTO buscarDonadorPorID(String donadorID) throws NoSuchElementException {
+        return this.restClient.get()
+                .uri("/donadores/{id}", donadorID)
+                .retrieve()
+                .body(DonadorDTO.class);
+    }
+
+    @Override
+    public Boolean puedeDonar(String donadorID) throws NoSuchElementException {
+        BooleanDTO respuesta = this.restClient.get()
+                .uri("/donadores/{id}/puede-donar", donadorID)
+                .retrieve()
+                .body(BooleanDTO.class);
+        return respuesta != null ? respuesta.puedeDonar() : false;
     }
 
     @Override
     public QuejaDTO agregarQueja(QuejaDTO quejaDTO) throws NoSuchElementException {
-        try {
-            String url = this.urlBase + "/donadores/" + quejaDTO.donadorID() + "/quejas";
-            return HttpClientBuilder.post(url, quejaDTO,  QuejaDTO.class);
-        } catch (PeticionExternaInvalidaException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new FalloServicioExternoException("Error al agregar queja", e);
-        }
+
+        record QuejaRequest(String donacionID, String descripcion) {}
+
+        QuejaRequest requestBody = new QuejaRequest(quejaDTO.donacionID(), quejaDTO.descripcion());
+
+        return this.restClient.post()
+                .uri("/donadores/{id}/quejas", quejaDTO.donadorID())
+                .body(requestBody)
+                .retrieve()
+                .body(QuejaDTO.class);
     }
 
     @Override
-    public DonadorDTO agregarDonador(DonadorDTO donadorDTO) { return null; }
+    public DonadorDTO agregarDonador(DonadorDTO donadorDTO) {
+        throw new UnsupportedOperationException("Operación no implementada en este cliente");
+    }
 
     @Override
-    public EntidadBeneficaDTO agregarEntidad(EntidadBeneficaDTO entidadBeneficaDTO) { return null; }
+    public EntidadBeneficaDTO agregarEntidad(EntidadBeneficaDTO entidadBeneficaDTO) {
+        throw new UnsupportedOperationException("Operación no implementada en este cliente");
+    }
 
     @Override
-    public EntidadBeneficaDTO buscarEntidadPorID(String entidadID) throws NoSuchElementException { return null; }
+    public EntidadBeneficaDTO buscarEntidadPorID(String entidadID) throws NoSuchElementException {
+        throw new UnsupportedOperationException("Operación no implementada en este cliente");
+    }
 
     @Override
-    public NecesidadMaterialDTO registrarNecesidad(NecesidadMaterialDTO necesidadMaterialDTO) { return null; }
-
-
-    @Override
-    public List<QuejaDTO> obtenerQuejasDe(String donadorID) throws NoSuchElementException { return null; }
+    public NecesidadMaterialDTO registrarNecesidad(NecesidadMaterialDTO necesidadMaterialDTO) {
+        throw new UnsupportedOperationException("Operación no implementada en este cliente");
+    }
 
     @Override
-    public DonadorDTO modificarEstado(String donadorID, EstadoDonadorEnum estado) throws NoSuchElementException { return null; }
+    public List<QuejaDTO> obtenerQuejasDe(String donadorID) throws NoSuchElementException {
+        throw new UnsupportedOperationException("Operación no implementada en este cliente");
+    }
 
     @Override
-    public DonadorDTO modifcarCategoria(String donadorID, String categoria) throws NoSuchElementException { return null; }
+    public DonadorDTO modificarEstado(String donadorID, EstadoDonadorEnum estado) throws NoSuchElementException {
+        throw new UnsupportedOperationException("Operación no implementada en este cliente");
+    }
 
     @Override
-    public List<NecesidadMaterialDTO> obtenerNecesidadesInsatisfechasDe(String productoSolicitadoID) { return null; }
+    public DonadorDTO modifcarCategoria(String donadorID, String categoria) throws NoSuchElementException {
+        throw new UnsupportedOperationException("Operación no implementada en este cliente");
+    }
 
     @Override
-    public NecesidadMaterialDTO satisfacerNecesidad(String necesidadID, Integer cantidad) throws NoSuchElementException { return null; }
+    public List<NecesidadMaterialDTO> obtenerNecesidadesInsatisfechasDe(String productoSolicitadoID) {
+        throw new UnsupportedOperationException("Operación no implementada en este cliente");
+    }
 
     @Override
-    public DonadorStatsDTO estadisticasDonador(String donadorID) { return null; }
+    public NecesidadMaterialDTO satisfacerNecesidad(String necesidadID, Integer cantidad) throws NoSuchElementException {
+        throw new UnsupportedOperationException("Operación no implementada en este cliente");
+    }
 
     @Override
-    public void setFachadaIncentivos(FachadaIncentivos fachadaIncentivos) {}
+    public DonadorStatsDTO estadisticasDonador(String donadorID) {
+        throw new UnsupportedOperationException("Operación no implementada en este cliente");
+    }
 
+    @Override
+    public void setFachadaIncentivos(FachadaIncentivos fachadaIncentivos) {
+    }
 }
