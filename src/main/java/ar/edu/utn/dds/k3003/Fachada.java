@@ -13,6 +13,7 @@ import ar.edu.utn.dds.k3003.mappers.ProductoDataMapper;
 import ar.edu.utn.dds.k3003.mappers.IdentificadoresDataMapper;
 import ar.edu.utn.dds.k3003.service.DonacionesService;
 import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.validation.constraints.Pattern;
 import lombok.val;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -297,5 +298,10 @@ public class Fachada implements FachadaDonaciones{
         this.fachadaDonadoresYEntidades.buscarDonadorPorID(donadorID);
         List<Donacion> donaciones = this.donacionesService.buscarDonacionPorDonador(donadorID);
         return donaciones.stream().map(this.donacionesDataMapper::toDonacionDTO).toList();
+    }
+
+    public boolean verificarExistenciaProducto(String productoID) {
+        Long longID = Long.parseLong(productoID);
+        return this.donacionesService.verificarExistenciaProducto(longID);
     }
 }

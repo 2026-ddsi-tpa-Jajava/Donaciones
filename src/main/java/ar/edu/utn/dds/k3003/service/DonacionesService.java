@@ -86,7 +86,9 @@ public class DonacionesService {
     @Transactional
     public Donacion cambiarEstadoDonacion(Long donacionID, EstadoDonacionEnum estado) {
         val donacion = this.buscarDonacionPorId(donacionID);
-
+        if (donacion.getEstado() == estado) {
+            return donacion;
+        }
         donacion.cambiarEstado(estado);
 
         return donacion;
@@ -258,5 +260,9 @@ public class DonacionesService {
     public List<Donacion> buscarDonacionPorDonador(String donadorID) {
 
         return this.donacionesRepository.findByDonadorID(donadorID);
+    }
+
+    public boolean verificarExistenciaProducto(Long productoID) {
+        return this.productoRepository.existsById(productoID);
     }
 }

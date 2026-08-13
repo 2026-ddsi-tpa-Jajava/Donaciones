@@ -60,4 +60,11 @@ public class ProductoController {
         this.fachada.eliminarProducto(id);
         return ResponseEntity.noContent().build();
     }
+
+     @GetMapping("/{id}/existencia")
+    public ResponseEntity<Boolean> verificarExistencia(@PathVariable @Pattern(regexp = "^\\d+$", message = "El ID debe ser numérico") String id)
+     {
+         boolean existe = this.fachada.verificarExistenciaProducto(id);
+         return ResponseEntity.ok(existe);
+     }
 }

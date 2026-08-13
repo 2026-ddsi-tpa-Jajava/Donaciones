@@ -70,14 +70,19 @@ public class Donacion {
     public void agregarQueja(String descripcion) {
 
         this.quejas.add(descripcion);
-        this.cambiarEstado(EstadoDonacionEnum.CONQUEJA);
+        if (this.estado != EstadoDonacionEnum.CONQUEJA) {
+            this.cambiarEstado(EstadoDonacionEnum.CONQUEJA);
+        }
     }
 
     public void retirarQueja(String descripcion) {
         this.quejas.remove(descripcion);
-        this.setEstado(EstadoDonacionEnum.ACEPTADA);
-        if (!this.historialEstados.isEmpty()) {
-            this.historialEstados.removeLast();
+
+        if (this.quejas.isEmpty()) {
+            this.setEstado(EstadoDonacionEnum.ACEPTADA);
+            if (!this.historialEstados.isEmpty()) {
+                this.historialEstados.removeLast();
+            }
         }
     }
 
