@@ -250,11 +250,11 @@ public class DonacionesService {
     }
 
     public void resetear() {
+        donacionesRepository.deleteAll();
+        productoRepository.deleteAll();
         subcategoriaRepository.deleteAll();
         categoriaRepository.deleteAll();
         identificadoresRepository.deleteAll();
-        productoRepository.deleteAll();
-        donacionesRepository.deleteAll();
     }
 
     public List<Donacion> buscarDonacionPorDonador(String donadorID) {
