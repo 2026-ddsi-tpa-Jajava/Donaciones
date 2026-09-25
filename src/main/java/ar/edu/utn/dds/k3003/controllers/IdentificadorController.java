@@ -34,7 +34,7 @@ public class IdentificadorController {
     }
 
     @GetMapping
-    public ResponseEntity<List<IdentificadorDTO>> obtenerCategorias() {
+    public ResponseEntity<List<IdentificadorDTO>> obtenerIdentificadores() {
         List<IdentificadorDTO> productos = this.fachada.obtenerTodasLosIdentificadores();
         return ResponseEntity.ok(productos);
     }

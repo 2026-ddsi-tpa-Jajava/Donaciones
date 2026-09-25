@@ -1,4 +1,4 @@
-package ar.edu.utn.dds.k3003.exceptions;
+package ar.edu.utn.dds.k3003.config;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;

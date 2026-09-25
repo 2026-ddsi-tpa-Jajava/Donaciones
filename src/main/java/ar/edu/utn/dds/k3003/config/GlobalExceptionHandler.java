@@ -1,5 +1,6 @@
-package ar.edu.utn.dds.k3003.exceptions;
+package ar.edu.utn.dds.k3003.config;
 
+import ar.edu.utn.dds.k3003.exceptions.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;

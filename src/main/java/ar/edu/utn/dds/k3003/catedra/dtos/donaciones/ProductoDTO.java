@@ -8,8 +8,8 @@ public record ProductoDTO(
         @NotBlank(message = "El nombre del producto es obligatorio")
         String nombre,
         String descripcion,
-        @NotBlank(message = "La categoriaID del producto es obligatoria")
-        String categoriaID,
+        @NotBlank(message = "La subcategoriaID del producto es obligatoria")
+        String subcategoriaID,
         @NotBlank(message = "El identificadorID del producto es obligatorio")
         String identificadorID
 ) {}

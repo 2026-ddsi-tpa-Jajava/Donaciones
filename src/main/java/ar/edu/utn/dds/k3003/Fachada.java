@@ -13,14 +13,10 @@ import ar.edu.utn.dds.k3003.mappers.ProductoDataMapper;
 import ar.edu.utn.dds.k3003.mappers.IdentificadoresDataMapper;
 import ar.edu.utn.dds.k3003.service.DonacionesService;
 import io.micrometer.core.instrument.MeterRegistry;
-import jakarta.validation.constraints.Pattern;
 import lombok.val;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.*;
-import ar.edu.utn.dds.k3003.catedra.dtos.donadoresYEntidades.QuejaDTO;
 import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaDonaciones;
 import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaLogistica;
 import ar.edu.utn.dds.k3003.mappers.DonacionesDataMapper;
@@ -33,14 +29,11 @@ public class Fachada implements FachadaDonaciones{
 
     private final DonacionesService donacionesService;
     private final MeterRegistry meterRegistry;
-    private FachadaDonadoresYEntidades fachadaDonadoresYEntidades;
-    private FachadaLogistica fachadaLogistica;
     private final DonacionesDataMapper donacionesDataMapper = new DonacionesDataMapper();
     private final ProductoDataMapper productoDataMapper = new ProductoDataMapper();
     private final IdentificadoresDataMapper identificadoresDataMapper = new IdentificadoresDataMapper();
     private final CategoriaDataMapper categoriaDataMapper =  new CategoriaDataMapper();
     private final SubcategoriaDataMapper  subcategoriaDataMapper = new SubcategoriaDataMapper();
-    private static final Logger logger = LoggerFactory.getLogger(Fachada.class);
 
     @Autowired
     public Fachada(DonacionesService donacionesService, MeterRegistry meterRegistry) {
@@ -51,50 +44,11 @@ public class Fachada implements FachadaDonaciones{
     @Override
     public DonacionDTO registrarDonacion(DonacionDTO donacionDTO) {
 
-        this.verificarDonador(donacionDTO.donadorID());
-        val donacionRegistrada = donacionesService.gestionarDonacionRecibida(donacionDTO);
-
-        boolean reversionExitosa = false;
-
-        try {
-            fachadaLogistica.gestionarDonacion(
-                    donacionRegistrada.getDepositoID(),
-                    donacionRegistrada.getId().toString(),
-                    donacionRegistrada.getProducto().getId().toString(),
-                    donacionRegistrada.getCantidad()
-            );
-
-        } catch (PeticionExternaInvalidaException e) {
-            this.eliminarDonacion(donacionRegistrada.getId());
-            throw new PeticionExternaInvalidaException(
-                    "Fallo en Logística: " + e.getMessage(),
-                    e.getStatusCode()
-            );
-
-        } catch (FalloServicioExternoException e) {
-            try {
-                this.eliminarDonacion(donacionRegistrada.getId());
-                reversionExitosa = true;
-            } catch (Exception rollbackEx) {
-                logger.error("ALERTA: No se pudo eliminar la donacion {}. El sistema externo y el local estan desincronizados.", donacionRegistrada.getId(), rollbackEx);
-            }
-
-            String mensajeError = reversionExitosa
-                    ? "Error de comunicación con Logística. La donación fue revertida."
-                    : "Error de comunicación con Logística. FALLO CRÍTICO: La donación NO pudo ser revertida.";
-
-            throw new FalloServicioExternoException(mensajeError, e);
-        }
+        Donacion donacionRegistrada = donacionesService.registrarDonacion(donacionDTO);
 
         this.meterRegistry.counter("donaciones.donacion.operaciones","operacion", "alta").increment();
-        return this.donacionesDataMapper.toDonacionDTO(donacionRegistrada);
-    }
 
-    private void verificarDonador(String donadorID) {
-//        this.fachadaDonadoresYEntidades.buscarDonadorPorID(donadorID);
-        if (!fachadaDonadoresYEntidades.puedeDonar(donadorID)) {
-            throw new DonadorNoAptoException("El donador no se encuentra apto para donar");
-        }
+        return this.donacionesDataMapper.toDonacionDTO(donacionRegistrada);
     }
 
     @Override
@@ -106,8 +60,9 @@ public class Fachada implements FachadaDonaciones{
 
     @Override
     public DonacionDTO cambiarEstadoDeDonacion(String donacionID, EstadoDonacionEnum estado) throws NoSuchElementException {
-        Long longID = Long.parseLong(donacionID);
-        val donacion = this.donacionesService.cambiarEstadoDonacion(longID, estado);
+
+        val donacion = this.donacionesService.cambiarEstadoDonacion(donacionID, estado);
+
         this.meterRegistry.counter("donaciones.estado.cambios","nuevo_estado", estado.name()).increment();
 
         return this.donacionesDataMapper.toDonacionDTO(donacion);
@@ -115,50 +70,19 @@ public class Fachada implements FachadaDonaciones{
 
     @Override
     public List<DonacionDTO> buscarPorDonadorYFechaInicio(String donadorID, LocalDate fecha) throws NoSuchElementException {
-        this.fachadaDonadoresYEntidades.buscarDonadorPorID(donadorID);
-        val donaciones = this.donacionesService.buscarDonacionPorDonadorYFechaInicio(donadorID, fecha);
+        List<Donacion> donaciones = this.donacionesService.buscarDonacionPorDonadorYFechaInicio(donadorID, fecha);
         return donaciones.stream().map(this.donacionesDataMapper::toDonacionDTO).toList();
     }
 
     @Override
     public DonacionDTO registrarQuejaEnDonacion(String donacionID, String descripcion) {
-        Long longID = Long.parseLong(donacionID);
-        val donacion = this.donacionesService.buscarDonacionPorId(longID);
-        QuejaDTO quejaDTO = new QuejaDTO(null, donacionID, donacion.getDonadorID(), LocalDate.now(), descripcion);
-        val donacionActualizada = this.donacionesService.registrarQueja(donacion, descripcion);
 
-        boolean reversionExitosa = false;
-
-        try {
-            this.fachadaDonadoresYEntidades.agregarQueja(quejaDTO);
-        } catch (PeticionExternaInvalidaException e) {
-            this.retirarQueja(donacion, descripcion);
-            throw e;
-
-        }catch (FalloServicioExternoException e) {
-            try {
-                this.retirarQueja(donacion, descripcion);
-                reversionExitosa = true;
-            } catch (Exception rollbackEx) {
-                logger.error("ALERTA DE CONSISTENCIA: No se pudo retirar la queja de la donacion {}. El sistema externo y el local estan desincronizados.", donacionID, rollbackEx);
-            }
-
-            String mensajeError = reversionExitosa
-                    ? "Error al registrar queja en donacion. La acción fue revertida."
-                    : "Error al registrar queja en donacion. FALLO CRÍTICO: La acción local NO pudo ser revertida.";
-
-            throw new FalloServicioExternoException(mensajeError, e);
-        }
+        val donacionActualizada = this.donacionesService.registrarQuejaEnDonacion(donacionID, descripcion);
 
         this.meterRegistry.counter("donaciones.queja.operaciones", "operacion", "alta").increment();
         this.meterRegistry.counter("donaciones.estado.cambios","nuevo_estado", donacionActualizada.getEstado().name()).increment();
 
         return this.donacionesDataMapper.toDonacionDTO(donacionActualizada);
-    }
-
-    private void retirarQueja(Donacion donacion, String descripcion) {
-        this.donacionesService.retirarQueja(donacion, descripcion);
-        this.meterRegistry.counter("donaciones.queja.operaciones", "operacion", "baja").increment();
     }
 
     @Override
@@ -198,13 +122,13 @@ public class Fachada implements FachadaDonaciones{
     @Autowired
     @Override
     public void setFachadaDonadoresYEntidades(FachadaDonadoresYEntidades fachadaDonadoresYEntidades) {
-        this.fachadaDonadoresYEntidades = fachadaDonadoresYEntidades;
+        this.donacionesService.setFachadaDonadoresYEntidades(fachadaDonadoresYEntidades);
     }
 
     @Autowired
     @Override
     public void setFachadaLogistica(FachadaLogistica fachadaLogistica) {
-        this.fachadaLogistica = fachadaLogistica;
+        this.donacionesService.setFachadaLogistica(fachadaLogistica);
     }
 
     public List<DonacionDTO> obtenerTodasLasDonaciones() {
@@ -295,7 +219,6 @@ public class Fachada implements FachadaDonaciones{
     }
 
     public List<DonacionDTO> buscarPorDonador(String donadorID) {
-        this.fachadaDonadoresYEntidades.buscarDonadorPorID(donadorID);
         List<Donacion> donaciones = this.donacionesService.buscarDonacionPorDonador(donadorID);
         return donaciones.stream().map(this.donacionesDataMapper::toDonacionDTO).toList();
     }

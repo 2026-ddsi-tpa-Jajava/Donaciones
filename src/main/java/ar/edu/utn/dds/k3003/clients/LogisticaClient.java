@@ -8,6 +8,7 @@ import ar.edu.utn.dds.k3003.catedra.dtos.logistica.TipoAlgoritmoEnum;
 import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaDonaciones;
 import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaDonadoresYEntidades;
 import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaLogistica;
+import ar.edu.utn.dds.k3003.config.RestClientHeaderInterceptor;
 import ar.edu.utn.dds.k3003.exceptions.FalloServicioExternoException;
 import ar.edu.utn.dds.k3003.exceptions.PeticionExternaInvalidaException;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,7 +18,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 
 @Component
@@ -27,10 +27,12 @@ public class LogisticaClient implements FachadaLogistica {
 
     public LogisticaClient(
             @Value("${url.logistica}") String urlBase,
-            RestClient.Builder restClientBuilder) {
+            RestClient.Builder restClientBuilder,
+            RestClientHeaderInterceptor interceptor) {
 
         this.restClient = restClientBuilder
                 .baseUrl(urlBase)
+                .requestInterceptor(interceptor)
                 .defaultStatusHandler(status -> status.isSameCodeAs(HttpStatus.NOT_FOUND), (request, response) -> {
                     throw new NoSuchElementException(
                             String.format("Logistica: Recurso no encontrado. Petición: %s %s",

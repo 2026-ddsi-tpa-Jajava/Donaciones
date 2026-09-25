@@ -4,6 +4,7 @@ import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.BooleanDTO;
 import ar.edu.utn.dds.k3003.catedra.dtos.donadoresYEntidades.*;
 import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaDonadoresYEntidades;
 import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaIncentivos;
+import ar.edu.utn.dds.k3003.config.RestClientHeaderInterceptor;
 import ar.edu.utn.dds.k3003.exceptions.FalloServicioExternoException;
 import ar.edu.utn.dds.k3003.exceptions.PeticionExternaInvalidaException;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,10 +23,12 @@ public class DonadoresYEntidadesClient implements FachadaDonadoresYEntidades {
 
     public DonadoresYEntidadesClient(
             @Value("${url.donadores}") String urlBase,
-            RestClient.Builder restClientBuilder) {
+            RestClient.Builder restClientBuilder,
+            RestClientHeaderInterceptor interceptor) {
 
         this.restClient = restClientBuilder
                 .baseUrl(urlBase)
+                .requestInterceptor(interceptor)
                 .defaultStatusHandler(status -> status.isSameCodeAs(HttpStatus.NOT_FOUND), (request, response) -> {
                     throw new NoSuchElementException(
                             String.format("Donadores y Entidades: Recurso no encontrado. Petición: %s %s",
