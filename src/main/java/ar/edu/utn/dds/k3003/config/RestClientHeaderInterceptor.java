@@ -1,5 +1,4 @@
 package ar.edu.utn.dds.k3003.config;
-
 import org.slf4j.MDC;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
@@ -11,19 +10,14 @@ import java.io.IOException;
 
 @Component
 public class RestClientHeaderInterceptor implements ClientHttpRequestInterceptor {
-
-    private static final String CORRELATION_ID_HEADER = "X-Correlation-ID";
-    private static final String CORRELATION_ID_LOG_VAR = "correlationId";
+    private static final String TRACE_ID_HEADER = "X-Trace-Id";
 
     @Override
     public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution) throws IOException {
-
-        String correlationId = MDC.get(CORRELATION_ID_LOG_VAR);
-
-        if (correlationId != null) {
-            request.getHeaders().add(CORRELATION_ID_HEADER, correlationId);
+        String traceId = MDC.get("traceId");
+        if (traceId != null) {
+            request.getHeaders().add(TRACE_ID_HEADER, traceId);
         }
-
         return execution.execute(request, body);
     }
 }

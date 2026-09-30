@@ -13,6 +13,8 @@ import ar.edu.utn.dds.k3003.repositories.ProductoRepository;
 import ar.edu.utn.dds.k3003.repositories.IdentificadoresRepository;
 import lombok.Setter;
 import lombok.val;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +34,7 @@ public class DonacionesService {
     private FachadaDonadoresYEntidades fachadaDonadoresYEntidades;
     @Setter
     private FachadaLogistica fachadaLogistica;
+    private static final Logger log = LoggerFactory.getLogger(DonacionesService.class);
 
     @Autowired
     public DonacionesService(DonacionesRepository donacionesRepository, ProductoRepository productoRepository, CategoriaRepository categoriaRepository, IdentificadoresRepository identificadoresRepository, SubcategoriaRepository subcategoriaRepository, FabricaValidadoresIdentificador fabricaValidadores) {
@@ -45,9 +48,14 @@ public class DonacionesService {
 
     @Transactional
     public Donacion registrarDonacion(DonacionDTO donacion) {
+
+        log.info("Iniciando registro de donación para el donadorID: {}", donacion.donadorID());
+
         this.verificarDonador(donacion.donadorID());
 
         Donacion donacionRegistrada = this.gestionarDonacionRecibida(donacion);
+
+        log.info("Notificando al servicio de Logística sobre la donaciónID: {}", donacionRegistrada.getId());
 
         fachadaLogistica.gestionarDonacion(
                 donacionRegistrada.getDepositoID(),
@@ -55,6 +63,8 @@ public class DonacionesService {
                 donacionRegistrada.getProducto().getId().toString(),
                 donacionRegistrada.getCantidad()
         );
+
+        log.info("Donación {} registrada exitosamente.", donacionRegistrada.getId());
 
         return donacionRegistrada;
     }
@@ -82,12 +92,19 @@ public class DonacionesService {
     @Transactional
     public Donacion registrarQuejaEnDonacion(String donacionID, String descripcion) {
         Long longID = Long.parseLong(donacionID);
+        log.info("Iniciando registro de queja para la donacionID: {}", donacionID);
+
         Donacion donacion = this.buscarDonacionPorId(longID);
         QuejaDTO queja =  new QuejaDTO(null, donacionID, donacion.getDonadorID(), LocalDate.now(), descripcion);
-
         Donacion donacionActualizada = this.registrarQueja(donacion, descripcion);
 
-        this.fachadaDonadoresYEntidades.agregarQueja(queja);
+        try {
+            this.fachadaDonadoresYEntidades.agregarQueja(queja);
+            log.info("Queja comunicada exitosamente al módulo de Donadores para la donacionID: {}", donacionID);
+        } catch (Exception e) {
+            log.error("Fallo al comunicar la queja al servicio externo para la donacionID: {}. Detalle: {}", donacionID, e.getMessage());
+            throw e;
+        }
 
         return donacionActualizada;
     }
@@ -121,6 +138,7 @@ public class DonacionesService {
     }
 
     public List<Donacion> buscarDonacionPorDonadorYFechaInicio(String donadorID, LocalDate fecha) {
+        log.debug("Consultando donaciones para el donadorID: {} desde la fecha: {}", donadorID, fecha);
         this.fachadaDonadoresYEntidades.buscarDonadorPorID(donadorID);
         return this.donacionesRepository.findByDonadorIDAndFechaGreaterThanEqual(donadorID, fecha);
     }
@@ -133,7 +151,15 @@ public class DonacionesService {
         if (donacion.getEstado() == estado) {
             return donacion;
         }
-        donacion.cambiarEstado(estado);
+
+        try {
+            donacion.cambiarEstado(estado);
+            log.info("Transición exitosa: Donación {} cambió a estado {}", donacionID, estado);
+        } catch (CambioEstadoInvalidoException e) {
+            log.warn("Transición inválida rechazada: Intento de pasar la donación {} del estado {} al estado {}",
+                    donacionID, donacion.getEstado(), estado);
+            throw e;
+        }
 
         return donacion;
     }
@@ -144,28 +170,24 @@ public class DonacionesService {
         Long identificadorID = Long.parseLong(productoDTO.identificadorID());
 
         val identificador = this.buscarIdentificador(identificadorID);
-
         if(this.productoRepository.existsByIdentificador_Id(identificador.getId())) {
             throw new IdentificadorAsignadoException("El identificador " + identificadorID + " ya se encuentra asignado a otro producto.");
         }
 
         Subcategoria subcategoria = this.buscarSubcategoria(categoriaID);
-
-        ValidadorIdentificador validador =
-                this.fabricaValidadores.obtenerValidador(identificador.getTipo());
+        ValidadorIdentificador validador = this.fabricaValidadores.obtenerValidador(identificador.getTipo());
 
         if (!validador.esValido(productoDTO.nombre(), productoDTO.descripcion())) {
+            log.warn("Rechazo de negocio: El identificador {} (Tipo: {}) no es válido para el producto '{}'",
+                    identificador.getId(), identificador.getTipo(), productoDTO.nombre());
             throw new ProductoInvalidoException("El producto no cumple las reglas de validación para su tipo de identificador.");
         }
 
-        Producto producto = new Producto(
-                productoDTO.nombre(),
-                productoDTO.descripcion(),
-                subcategoria,
-                identificador
-        );
+        Producto producto = new Producto(productoDTO.nombre(), productoDTO.descripcion(), subcategoria, identificador);
+        Producto guardado = this.productoRepository.save(producto);
+        log.info("Producto dado de alta exitosamente: ID {} - {}", guardado.getId(), guardado.getNombre());
 
-        return this.productoRepository.save(producto);
+        return guardado;
     }
 
     public Identificador buscarIdentificador(Long identificadorID) {
@@ -296,6 +318,7 @@ public class DonacionesService {
     }
 
     public List<Donacion> buscarDonacionPorDonador(String donadorID) {
+        log.debug("Consultando todas las donaciones para el donadorID: {}", donadorID);
         this.fachadaDonadoresYEntidades.buscarDonadorPorID(donadorID);
         return this.donacionesRepository.findByDonadorID(donadorID);
     }
