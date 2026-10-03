@@ -227,4 +227,10 @@ public class Fachada implements FachadaDonaciones{
         Long longID = Long.parseLong(productoID);
         return this.donacionesService.verificarExistenciaProducto(longID);
     }
+
+    public SubcategoriaDTO buscarSubcategoriaPorID(String id) {
+        Long subcategoriaID = Long.parseLong(id);
+        var subcategoria = this.donacionesService.buscarSubcategoria(subcategoriaID);
+        return this.subcategoriaDataMapper.toSubategoriaDTO(subcategoria);
+    }
 }

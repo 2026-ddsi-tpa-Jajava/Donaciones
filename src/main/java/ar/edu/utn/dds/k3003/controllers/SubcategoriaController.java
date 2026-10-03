@@ -17,6 +17,12 @@ public class SubcategoriaController {
         this.fachada = fachada;
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<SubcategoriaDTO> obtenerSubcategoria(@PathVariable @Pattern(regexp = "^\\d+$", message = "El ID debe ser numérico") String id) {
+        SubcategoriaDTO subcategoria = this.fachada.buscarSubcategoriaPorID(id);
+        return ResponseEntity.ok(subcategoria);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<SubcategoriaDTO> eliminarSubcategoria(@PathVariable @Pattern(regexp = "^\\d+$", message = "El ID debe ser numérico") String id) {
             this.fachada.eliminarSubcategoria(id);
