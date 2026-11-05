@@ -4,6 +4,7 @@ import ar.edu.utn.dds.k3003.catedra.dtos.donaciones.*;
 import ar.edu.utn.dds.k3003.catedra.dtos.donadoresYEntidades.QuejaDTO;
 import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaDonadoresYEntidades;
 import ar.edu.utn.dds.k3003.catedra.fachadas.FachadaLogistica;
+import ar.edu.utn.dds.k3003.events.*;
 import ar.edu.utn.dds.k3003.exceptions.*;
 import ar.edu.utn.dds.k3003.model.*;
 import ar.edu.utn.dds.k3003.repositories.CategoriaRepository;
@@ -35,15 +36,17 @@ public class DonacionesService {
     @Setter
     private FachadaLogistica fachadaLogistica;
     private static final Logger log = LoggerFactory.getLogger(DonacionesService.class);
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     @Autowired
-    public DonacionesService(DonacionesRepository donacionesRepository, ProductoRepository productoRepository, CategoriaRepository categoriaRepository, IdentificadoresRepository identificadoresRepository, SubcategoriaRepository subcategoriaRepository, FabricaValidadoresIdentificador fabricaValidadores) {
+    public DonacionesService(DonacionesRepository donacionesRepository, ProductoRepository productoRepository, CategoriaRepository categoriaRepository, IdentificadoresRepository identificadoresRepository, SubcategoriaRepository subcategoriaRepository, FabricaValidadoresIdentificador fabricaValidadores, org.springframework.context.ApplicationEventPublisher eventPublisher) {
         this.donacionesRepository = donacionesRepository;
         this.productoRepository = productoRepository;
         this.categoriaRepository = categoriaRepository;
         this.identificadoresRepository = identificadoresRepository;
         this.subcategoriaRepository = subcategoriaRepository;
         this.fabricaValidadores = fabricaValidadores;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -63,6 +66,18 @@ public class DonacionesService {
                 donacionRegistrada.getProducto().getId().toString(),
                 donacionRegistrada.getCantidad()
         );
+
+        DonacionCreadaEvent evento = new DonacionCreadaEvent(
+                java.util.UUID.randomUUID().toString(),
+                java.time.Instant.now(),
+                donacionRegistrada.getVersion() != null ? donacionRegistrada.getVersion() : 1L,
+                donacionRegistrada.getId().toString(),
+                donacionRegistrada.getDonadorID(),
+                donacionRegistrada.getDepositoID(),
+                donacionRegistrada.getProducto().getId().toString(),
+                donacionRegistrada.getCantidad()
+        );
+        eventPublisher.publishEvent(evento);
 
         log.info("Donación {} registrada exitosamente.", donacionRegistrada.getId());
 
@@ -105,6 +120,17 @@ public class DonacionesService {
             log.error("Fallo al comunicar la queja al servicio externo para la donacionID: {}. Detalle: {}", donacionID, e.getMessage());
             throw e;
         }
+
+        DonacionEstadoCambiadoEvent evento = new DonacionEstadoCambiadoEvent(
+                java.util.UUID.randomUUID().toString(),
+                java.time.Instant.now(),
+                donacionActualizada.getVersion() != null ? donacionActualizada.getVersion() : 1L,
+                donacionID,
+                donacionActualizada.getEstado().name(),
+                descripcion,
+                donacionActualizada.getQuejas()
+        );
+        eventPublisher.publishEvent(evento);
 
         return donacionActualizada;
     }
@@ -161,6 +187,17 @@ public class DonacionesService {
             throw e;
         }
 
+        DonacionEstadoCambiadoEvent evento = new DonacionEstadoCambiadoEvent(
+                java.util.UUID.randomUUID().toString(),
+                java.time.Instant.now(),
+                donacion.getVersion() != null ? donacion.getVersion() : 1L,
+                donacionID,
+                donacion.getEstado().name(),
+                null,
+                donacion.getQuejas()
+        );
+        eventPublisher.publishEvent(evento);
+
         return donacion;
     }
 
@@ -185,6 +222,20 @@ public class DonacionesService {
 
         Producto producto = new Producto(productoDTO.nombre(), productoDTO.descripcion(), subcategoria, identificador);
         Producto guardado = this.productoRepository.save(producto);
+
+        ProductoCreadoEvent evento = new ProductoCreadoEvent(
+                java.util.UUID.randomUUID().toString(),
+                java.time.Instant.now(),
+                guardado.getVersion() != null ? guardado.getVersion() : 1L,
+                guardado.getId().toString(),
+                guardado.getNombre(),
+                guardado.getDescripcion(),
+                guardado.getSubcategoria().getId().toString(),
+                guardado.getSubcategoria().getNombre(),
+                guardado.getSubcategoria().getCategoria().getNombre()
+        );
+        eventPublisher.publishEvent(evento);
+
         log.info("Producto dado de alta exitosamente: ID {} - {}", guardado.getId(), guardado.getNombre());
 
         return guardado;
@@ -259,7 +310,22 @@ public class DonacionesService {
         producto.setSubcategoria(subcategoria);
         producto.setIdentificador(identificador);
 
-        return this.productoRepository.save(producto);
+        Producto guardado = this.productoRepository.save(producto);
+
+        ProductoActualizadoEvent evento = new ProductoActualizadoEvent(
+                java.util.UUID.randomUUID().toString(),
+                java.time.Instant.now(),
+                guardado.getVersion() != null ? guardado.getVersion() : 1L,
+                guardado.getId().toString(),
+                guardado.getNombre(),
+                guardado.getDescripcion(),
+                guardado.getSubcategoria().getId().toString(),
+                guardado.getSubcategoria().getNombre(),
+                guardado.getSubcategoria().getCategoria().getNombre()
+        );
+        eventPublisher.publishEvent(evento);
+
+        return guardado;
     }
 
     public List<Identificador> buscarTodosLosIdentificadores() {

@@ -19,6 +19,9 @@ public class Donacion {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Version
+    private Long version;
+
     @Column(name = "donador_id")
     private String donadorID;
 
