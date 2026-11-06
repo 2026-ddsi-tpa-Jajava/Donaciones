@@ -12,7 +12,7 @@ public class RabbitMQConfig {
 
     @Bean
     public Queue cqrsEventsQueue() {
-        return new Queue("cqrs.events.queue", true);
+        return new Queue("consultas.queue", true);
     }
 
     @Bean

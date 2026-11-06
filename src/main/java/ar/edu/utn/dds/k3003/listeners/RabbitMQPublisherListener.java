@@ -38,12 +38,12 @@ public class RabbitMQPublisherListener {
         Map<String, Object> eventoIntegracion = Map.of(
                 "id", evento.eventoId(),
                 "tipo", "DONACION_REGISTRADA",
-                "version", evento.version(), // Mapeo dinámico de la versión del agregado
+                "version", evento.version(),
                 "ocurridoEn", evento.timestamp().toString(),
                 "payload", payload
         );
-        rabbitTemplate.convertAndSend("cqrs.events.queue", eventoIntegracion);
-        log.info("Evento {} publicado exitosamente en cqrs.events.queue.", evento.eventoId());
+        rabbitTemplate.convertAndSend("consultas.queue", eventoIntegracion);
+        log.info("Evento {} publicado exitosamente en consultas.queue.", evento.eventoId());
     }
 
     @Retryable(value = AmqpException.class, maxAttempts = 3, backoff = @Backoff(delay = 1000))
@@ -65,12 +65,12 @@ public class RabbitMQPublisherListener {
         java.util.Map<String, Object> eventoIntegracion = java.util.Map.of(
                 "id", evento.eventoId(),
                 "tipo", "DONACION_ESTADO_CAMBIADO",
-                "version", evento.version(), // Mapeo dinámico de la versión
+                "version", evento.version(),
                 "ocurridoEn", evento.timestamp().toString(),
                 "payload", payload
         );
-        rabbitTemplate.convertAndSend("cqrs.events.queue", eventoIntegracion);
-        log.info("Cambio de estado de donación {} publicado en cqrs.events.queue.", evento.donacionId());
+        rabbitTemplate.convertAndSend("consultas.queue", eventoIntegracion);
+        log.info("Cambio de estado de donación {} publicado en consultas.queue.", evento.donacionId());
     }
 
     @Retryable(value = AmqpException.class, maxAttempts = 3, backoff = @Backoff(delay = 1000))
@@ -88,12 +88,12 @@ public class RabbitMQPublisherListener {
         java.util.Map<String, Object> eventoIntegracion = java.util.Map.of(
                 "id", evento.eventoId(),
                 "tipo", "PRODUCTO_REGISTRADO",
-                "version", evento.version(), // Mapeo dinámico de la versión
+                "version", evento.version(),
                 "ocurridoEn", evento.timestamp().toString(),
                 "payload", payload
         );
-        rabbitTemplate.convertAndSend("cqrs.events.queue", eventoIntegracion);
-        log.info("Producto {} publicado exitosamente en cqrs.events.queue.", evento.productoId());
+        rabbitTemplate.convertAndSend("consultas.queue", eventoIntegracion);
+        log.info("Producto {} publicado exitosamente en consultas.queue.", evento.productoId());
     }
 
     @Retryable(value = AmqpException.class, maxAttempts = 3, backoff = @Backoff(delay = 1000))
@@ -111,12 +111,12 @@ public class RabbitMQPublisherListener {
         java.util.Map<String, Object> eventoIntegracion = java.util.Map.of(
                 "id", evento.eventoId(),
                 "tipo", "PRODUCTO_ACTUALIZADO",
-                "version", evento.version(), // Mapeo dinámico de la versión
+                "version", evento.version(),
                 "ocurridoEn", evento.timestamp().toString(),
                 "payload", payload
         );
-        rabbitTemplate.convertAndSend("cqrs.events.queue", eventoIntegracion);
-        log.info("Actualización de producto {} publicada exitosamente en cqrs.events.queue.", evento.productoId());
+        rabbitTemplate.convertAndSend("consultas.queue", eventoIntegracion);
+        log.info("Actualización de producto {} publicada exitosamente en consultas.queue.", evento.productoId());
     }
 
     @Recover
