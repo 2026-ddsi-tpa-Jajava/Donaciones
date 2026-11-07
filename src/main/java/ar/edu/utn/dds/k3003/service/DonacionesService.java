@@ -75,7 +75,12 @@ public class DonacionesService {
                 donacionRegistrada.getDonadorID(),
                 donacionRegistrada.getDepositoID(),
                 donacionRegistrada.getProducto().getId().toString(),
-                donacionRegistrada.getCantidad()
+                donacionRegistrada.getCantidad(),
+                donacionRegistrada.getEstado().name(),
+                donacionRegistrada.getProducto().getSubcategoria().getCategoria().getNombre(),
+                donacionRegistrada.getProducto().getSubcategoria().getId().toString(),
+                donacionRegistrada.getProducto().getSubcategoria().getNombre(),
+                donacionRegistrada.getFecha().toString()
         );
         eventPublisher.publishEvent(evento);
 

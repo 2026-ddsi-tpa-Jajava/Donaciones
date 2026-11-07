@@ -28,13 +28,18 @@ public class RabbitMQPublisherListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleDonacionCreada(DonacionCreadaEvent evento) {
         log.info("Commit confirmado en DB. Publicando evento {} en RabbitMQ...", evento.eventoId());
-        Map<String, Object> payload = Map.of(
-                "id", evento.donacionId(),
-                "donadorID", evento.donadorId(),
-                "depositoID", evento.depositoId(),
-                "productoID", evento.productoId(),
-                "cantidad", evento.cantidad()
-        );
+        Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("id", evento.donacionId());
+        payload.put("donadorID", evento.donadorId());
+        payload.put("depositoID", evento.depositoId());
+        payload.put("productoID", evento.productoId());
+        payload.put("cantidad", evento.cantidad());
+        payload.put("estado", evento.estado());
+        payload.put("categoria", evento.categoria());
+        payload.put("subcategoriaID", evento.subcategoriaId());
+        payload.put("subcategoria", evento.subcategoria());
+        payload.put("fecha", evento.fecha());
+        payload.put("fechaIngreso", evento.timestamp().toString());
         Map<String, Object> eventoIntegracion = Map.of(
                 "id", evento.eventoId(),
                 "tipo", "DONACION_REGISTRADA",

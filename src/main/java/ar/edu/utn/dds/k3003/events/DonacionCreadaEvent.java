@@ -10,5 +10,10 @@ public record DonacionCreadaEvent(
         String donadorId,
         String depositoId,
         String productoId,
-        Integer cantidad
+        Integer cantidad,
+        String estado,
+        String categoria,
+        String subcategoriaId,
+        String subcategoria,
+        String fecha
 ) {}
